@@ -1,5 +1,6 @@
 local env=getfenv()
-if env.JDUI and env.JDUI.Destroy then env.JDUI:Destroy() end
+local old=env.JDUI or rawget(_G,"JDUI")
+if type(old)=="table" and old.Destroy then pcall(old.Destroy,old) end
 assert(Drawing and Drawing.new,"UI requires the Matcha Drawing API")
 local V,RGB=Vector2.new,Color3.fromRGB
 local unpackArgs=table.unpack or unpack
@@ -19,8 +20,8 @@ local function approach(a,b,t)
  return Color3.new(r,g,bl)
 end
 local function short(s,n) s=tostring(s or "");return #s>n and s:sub(1,n-3).."..." or s end
-local app={Version="1.0.2",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true}
-env.JDUI=app
+local app={Version="1.0.2b",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true}
+env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
 local mouse=game:GetService("Players").LocalPlayer:GetMouse()
@@ -196,6 +197,7 @@ function app:Destroy()
  for _,e in pairs(pool) do pcall(function() e.d:Remove() end) end
  pool={};notices={}
  if env.JDUI==self then env.JDUI=nil end
+ if rawget(_G,"JDUI")==self then pcall(rawset,_G,"JDUI",nil) end
 end
 local function requestClose()
  if not app.Alive or closingStarted or closeConfirm or closeConfirmClosing then return end

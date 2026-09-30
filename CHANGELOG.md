@@ -4,6 +4,10 @@ The current version is in `ui.Version`.
 
 **Numbering:** each new feature or fix gets the next `1.0.x` number. If it takes more than one try to get right, the follow-ups get a letter: `1.0.1`, `1.0.1b`, `1.0.1c` and so on. The next feature moves on to `1.0.2`.
 
+## 1.0.2b - 2026-09-30
+
+- The menu is also stored in `_G.JDUI`. Matcha drops the value a loadstring returns, so `loadstring(...)()` came back empty there. Use `loadstring(...)() or _G.JDUI`.
+
 ## 1.0.2 - 2026-09-30
 
 - New logo in the top left of the menu: a sombrero with two maracas crossed behind it, drawn with lines like the other icons so it follows the theme colour.

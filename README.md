@@ -19,16 +19,16 @@ The menu used by my Grand Blue and Find a Needle scripts, on its own so it can b
 ## Loading it
 
 ```lua
-local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))()
+local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))() or _G.JDUI
 ```
 
-Loading it returns the menu. It plays a short intro, then the menu shows up on screen. Running it again closes the old menu first, so reloading your script doesn't leave two menus on screen.
+Loading it gives you the menu. Some executors (Matcha included) drop the value a loadstring returns, so JDUI also puts the menu in `_G.JDUI`; the `or _G.JDUI` covers both. It plays a short intro, then the menu shows up on screen. Running it again closes the old menu first, so reloading your script doesn't leave two menus on screen.
 
 If the download can fail (no internet, GitHub down), wrap it so the rest of your script still runs:
 
 ```lua
 local ok, ui = pcall(function()
-	return loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))()
+	return loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))() or _G.JDUI
 end)
 if not ok or type(ui) ~= "table" then
 	warn("menu failed to load: " .. tostring(ui))
@@ -39,7 +39,7 @@ end
 ## Quick start
 
 ```lua
-local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))()
+local ui = loadstring(game:HttpGet("https://raw.githubusercontent.com/jdev-studio/jdui/refs/heads/main/JDUI"))() or _G.JDUI
 
 local main = ui:AddTab({ Title = "Main", Icon = "bolt" })
 
