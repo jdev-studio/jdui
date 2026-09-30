@@ -19,7 +19,7 @@ local function approach(a,b,t)
  return Color3.new(r,g,bl)
 end
 local function short(s,n) s=tostring(s or "");return #s>n and s:sub(1,n-3).."..." or s end
-local app={Version="1.0.0",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true}
+local app={Version="1.0.2",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true}
 env.JDUI=app
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -124,30 +124,26 @@ local function line(id,x1,y1,x2,y2,c,opacity,z,thickness)
  rawLine(id,x+x1*S,y+y1*S,x+x2*S,y+y2*S,c,a*opacity,z or 45,math.max(1,(thickness or 1.65)*S))
 end
 local paths={
- brand={{2,10,10,1},{10,1,18,10},{18,10,10,19},{10,19,2,10},{6,10,10,5},{10,5,14,10},{14,10,10,15},{10,15,6,10}},
- spark={{10,1,12,8},{12,8,19,10},{19,10,12,12},{12,12,10,19},{10,19,8,12},{8,12,1,10},{1,10,8,8},{8,8,10,1}},
- layers={{2,6,10,2},{10,2,18,6},{18,6,10,10},{10,10,2,6},{2,10,10,14},{10,14,18,10},{2,14,10,18},{10,18,18,14}},
- bolt={{11,1,3,11},{3,11,9,11},{9,11,8,19},{8,19,17,8},{17,8,11,8},{11,8,11,1}},
- shield={{3,3,10,1},{10,1,17,3},{17,3,16,12},{16,12,10,19},{10,19,4,12},{4,12,3,3},{7,9,9,12},{9,12,14,6}},
- palette={{3,4,17,4},{17,4,17,16},{17,16,3,16},{3,16,3,4},{7,4,7,16},{12,4,12,16}},
- power={{10,1,10,10},{5,4,2,8},{2,8,2,14},{2,14,6,18},{6,18,14,18},{14,18,18,14},{18,14,18,8},{18,8,15,4}},
- sliders={{2,5,6,5},{10,5,18,5},{6,2,6,8},{10,2,10,8},{6,2,10,2},{6,8,10,8},{2,15,11,15},{15,15,18,15},{11,12,15,12},{11,18,15,18},{11,12,11,18},{15,12,15,18}},
- home={{1,9,10,1},{10,1,19,9},{3,8,3,18},{3,18,8,18},{8,18,8,12},{8,12,12,12},{12,12,12,18},{12,18,17,18},{17,18,17,8},{13,3,13,1},{13,1,16,1},{16,1,16,6},{6,8,8,8}},
+ brand={{5.7,6,5,6.4},{5,6.4,4.1,6.3},{4.1,6.3,3.3,5.9},{3.3,5.9,2.5,5.2},{2.5,5.2,2,4.3},{2,4.3,1.8,3.4},{1.8,3.4,2,2.6},{2,2.6,2.5,2},{2.5,2,3.2,1.6},{3.2,1.6,4.1,1.7},{4.1,1.7,4.9,2.1},{4.9,2.1,5.7,2.8},{5.7,2.8,6.2,3.6},{6.2,3.6,6.4,4.6},{6.4,4.6,6.2,5.4},{6.2,5.4,5.7,6},{14.3,6,13.8,5.4},{13.8,5.4,13.6,4.6},{13.6,4.6,13.8,3.6},{13.8,3.6,14.3,2.8},{14.3,2.8,15.1,2.1},{15.1,2.1,15.9,1.7},{15.9,1.7,16.8,1.6},{16.8,1.6,17.5,2},{17.5,2,18,2.6},{18,2.6,18.2,3.4},{18.2,3.4,18,4.3},{18,4.3,17.5,5.2},{17.5,5.2,16.8,5.9},{16.8,5.9,15.9,6.3},{15.9,6.3,15,6.4},{15,6.4,14.3,6},{5.7,6,6.8,7.4},{14.4,16.9,16,18.9},{14.3,6,13.2,7.4},{5.6,16.9,4,18.9},{19,12.2,18.7,13.2},{18.7,13.2,17.8,14.2},{17.8,14.2,16.6,15.1},{16.6,15.1,15.1,15.7},{15.1,15.7,13.4,16.2},{13.4,16.2,11.4,16.4},{11.4,16.4,6.8,16.2},{6.8,16.2,4.6,15.6},{4.6,15.6,2.9,14.8},{2.9,14.8,1.5,13.5},{1.5,13.5,1,12.2},{1,12.2,1.3,11.6},{1.3,11.6,2.1,11.2},{2.1,11.2,6.9,10.4},{13.1,10.4,17.9,11.2},{17.9,11.2,18.7,11.6},{18.7,11.6,19,12.2},{6.6,13.3,6.9,10.5},{6.9,10.5,7.6,8.1},{7.6,8.1,8.7,6.5},{8.7,6.5,9.3,6.1},{9.3,6.1,10,6},{10,6,10.7,6.1},{10.7,6.1,11.3,6.5},{11.3,6.5,12.4,8.1},{12.4,8.1,13.1,10.5},{13.1,10.5,13.4,13.3},{13.4,13.3,13.1,13.6},{13.1,13.6,12.4,13.9},{12.4,13.9,10,14.2},{10,14.2,7.6,13.9},{7.6,13.9,6.9,13.7},{6.9,13.7,6.6,13.3}},
+ spark={{9.6,2.3,10,1.7},{10,1.7,10.4,2.3},{10.4,2.3,11.6,6.7},{11.6,6.7,12.2,7.8},{12.2,7.8,13.3,8.4},{13.3,8.4,17.7,9.6},{17.7,9.6,18.3,10},{18.3,10,17.7,10.4},{17.7,10.4,13.3,11.6},{13.3,11.6,12.2,12.2},{12.2,12.2,11.6,13.3},{11.6,13.3,10.4,17.7},{10.4,17.7,10,18.3},{10,18.3,9.6,17.7},{9.6,17.7,8.4,13.3},{8.4,13.3,7.8,12.2},{7.8,12.2,6.7,11.6},{6.7,11.6,2.3,10.4},{2.3,10.4,1.7,10},{1.7,10,2.3,9.6},{2.3,9.6,6.7,8.4},{6.7,8.4,7.8,7.8},{7.8,7.8,8.4,6.7},{8.4,6.7,9.6,2.3}},
+ layers={{2,10,8.7,13.4},{8.7,13.4,10,13.7},{10,13.7,11.3,13.4},{11.3,13.4,18,10},{2,14,8.7,17.4},{8.7,17.4,10,17.7},{10,17.7,11.3,17.4},{11.3,17.4,18,14},{3.3,6.6,2.6,6},{2.6,6,3.3,5.4},{3.3,5.4,8.7,2.6},{8.7,2.6,10,2.3},{10,2.3,11.3,2.6},{11.3,2.6,16.7,5.4},{16.7,5.4,17.4,6},{17.4,6,16.7,6.6},{16.7,6.6,11.3,9.4},{11.3,9.4,10,9.7},{10,9.7,8.7,9.4},{8.7,9.4,3.3,6.6}},
+ bolt={{11,2.4,10.8,1.6},{10.8,1.6,10.1,2.1},{10.1,2.1,3.9,9.9},{3.9,9.9,3.6,10.7},{3.6,10.7,4.4,11},{4.4,11,7.6,11},{7.6,11,8.6,11.3},{8.6,11.3,8.8,12.4},{8.8,12.4,8.2,17.6},{8.2,17.6,8.3,18.4},{8.3,18.4,8.9,17.9},{8.9,17.9,16.1,9.1},{16.1,9.1,16.4,8.3},{16.4,8.3,15.6,8},{15.6,8,12.4,8},{12.4,8,11.4,7.7},{11.4,7.7,11,6.6},{11,6.6,11,2.4}},
+ shield={{7,9,8.2,10.8},{8.2,10.8,9,11.4},{9,11.4,9.9,10.9},{9.9,10.9,14,6},{3.2,4.4,3.4,3.3},{3.4,3.3,4.3,2.6},{4.3,2.6,8.7,1.4},{8.7,1.4,10,1.2},{10,1.2,11.3,1.4},{11.3,1.4,15.7,2.6},{15.7,2.6,16.6,3.3},{16.6,3.3,16.8,4.4},{16.8,4.4,16.2,10.6},{16.2,10.6,15.8,11.9},{15.8,11.9,15.1,13.1},{15.1,13.1,10.9,17.9},{10.9,17.9,10,18.5},{10,18.5,9.1,17.9},{9.1,17.9,4.9,13.1},{4.9,13.1,4.2,11.9},{4.2,11.9,3.8,10.6},{3.8,10.6,3.2,4.4}},
+ palette={{7,4,7,16},{12,4,12,16},{3,5.4,3.4,4.4},{3.4,4.4,4.4,4},{4.4,4,15.6,4},{15.6,4,16.7,4.4},{16.7,4.4,17,5.4},{17,5.4,17,14.6},{17,14.6,16.7,15.7},{16.7,15.7,15.6,16},{15.6,16,4.4,16},{4.4,16,3.4,15.7},{3.4,15.7,3,14.6},{3,14.6,3,5.4}},
+ power={{10,1.5,10,8.5},{15,5.1,16.5,6.8},{16.5,6.8,17.4,8.9},{17.4,8.9,17.6,11.2},{17.6,11.2,17.1,13.4},{17.1,13.4,16,15.5},{16,15.5,14.3,17},{14.3,17,12.2,18.1},{12.2,18.1,10,18.4},{10,18.4,7.8,18.1},{7.8,18.1,5.7,17},{5.7,17,4,15.5},{4,15.5,2.9,13.5},{2.9,13.5,2.4,11.2},{2.4,11.2,2.6,9},{2.6,9,3.5,6.8},{3.5,6.8,5,5.1}},
+ sliders={{2,5,6,5},{10,5,18,5},{2,15,11,15},{15,15,18,15},{7.4,2,6.4,2.4},{6.4,2.4,6,3.4},{6,3.4,6,6.6},{6,6.6,6.4,7.7},{6.4,7.7,7.4,8},{7.4,8,8.6,8},{8.6,8,9.7,7.7},{9.7,7.7,10,6.6},{10,6.6,10,3.4},{10,3.4,9.7,2.4},{9.7,2.4,8.6,2},{8.6,2,7.4,2},{11,13.4,11.4,12.4},{11.4,12.4,12.4,12},{12.4,12,13.6,12},{13.6,12,14.7,12.4},{14.7,12.4,15,13.4},{15,13.4,15,16.6},{15,16.6,14.7,17.7},{14.7,17.7,13.6,18},{13.6,18,12.4,18},{12.4,18,11.4,17.7},{11.4,17.7,11,16.6},{11,16.6,11,13.4}},
+ home={{1,9,9,1.9},{9,1.9,10,1.5},{10,1.5,11,1.9},{11,1.9,19,9},{3,8,3,16.6},{3,16.6,3.4,17.7},{3.4,17.7,4.4,18},{4.4,18,6.6,18},{6.6,18,7.7,17.7},{7.7,17.7,8,16.6},{8,16.6,8,13.4},{8,13.4,8.4,12.4},{8.4,12.4,9.4,12},{9.4,12,10.6,12},{10.6,12,11.7,12.4},{11.7,12.4,12,13.4},{12,13.4,12,16.6},{12,16.6,12.4,17.7},{12.4,17.7,13.4,18},{13.4,18,15.6,18},{15.6,18,16.7,17.7},{16.7,17.7,17,16.6},{17,16.6,17,8},{13,3,13,1.9},{13,1.9,13.2,1.2},{13.2,1.2,13.9,1},{13.9,1,14.7,1},{14.7,1,15.7,1.3},{15.7,1.3,16,2.4},{16,2.4,16,6},{6,8,8,8}},
  close={{5,5,15,15},{15,5,5,15}},
- script={{6,4,2,10},{2,10,6,16},{14,4,18,10},{18,10,14,16},{12,3,8,17}},
- down={{5,7,10,12},{10,12,15,7}},up={{5,12,10,7},{10,7,15,12}},
- left={{12,5,7,10},{7,10,12,15}},right={{7,5,12,10},{12,10,7,15}},
- check={{4,10,8,14},{8,14,16,5}},key={{3,6,17,6},{17,6,17,15},{17,15,3,15},{3,15,3,6},{6,10,7,10},{10,10,11,10},{13,10,14,10},{7,13,13,13}},
- info={{10,5,10,6},{10,9,10,15},{8,15,12,15}},
+ script={{6,4,2.8,8.8},{2.8,8.8,2.4,10},{2.4,10,2.8,11.2},{2.8,11.2,6,16},{14,4,17.2,8.8},{17.2,8.8,17.6,10},{17.6,10,17.2,11.2},{17.2,11.2,14,16},{12,3,8,17}},
+ down={{5,7,9,11},{9,11,10,11.5},{10,11.5,11,11},{11,11,15,7}},
+ up={{5,12,9,8},{9,8,10,7.5},{10,7.5,11,8},{11,8,15,12}},
+ left={{12,5,8,9},{8,9,7.5,10},{7.5,10,8,11},{8,11,12,15}},
+ right={{7,5,11,9},{11,9,11.5,10},{11.5,10,11,11},{11,11,7,15}},
+ check={{4,10,7,13},{7,13,8,13.5},{8,13.5,8.9,13},{8.9,13,16,5}},
+ key={{6,10,7,10},{10,10,11,10},{13,10,14,10},{7,13,13,13},{3,7.4,3.4,6.4},{3.4,6.4,4.4,6},{4.4,6,15.6,6},{15.6,6,16.7,6.4},{16.7,6.4,17,7.4},{17,7.4,17,13.6},{17,13.6,16.7,14.7},{16.7,14.7,15.6,15},{15.6,15,4.4,15},{4.4,15,3.4,14.7},{3.4,14.7,3,13.6},{3,13.6,3,7.4}},
+ info={{18.5,10,18.3,11.7},{18.3,11.7,17.8,13.3},{17.8,13.3,17.1,14.7},{17.1,14.7,16,16},{16,16,14.7,17.1},{14.7,17.1,13.3,17.9},{13.3,17.9,11.7,18.3},{11.7,18.3,10,18.5},{10,18.5,8.3,18.3},{8.3,18.3,6.8,17.9},{6.8,17.9,5.3,17.1},{5.3,17.1,4,16},{4,16,3,14.8},{3,14.8,2.2,13.3},{2.2,13.3,1.7,11.7},{1.7,11.7,1.5,10},{1.5,10,1.7,8.4},{1.7,8.4,2.1,6.8},{2.1,6.8,2.9,5.3},{2.9,5.3,4,4},{4,4,5.2,3},{5.2,3,6.7,2.2},{6.7,2.2,8.3,1.7},{8.3,1.7,10,1.5},{10,1.5,11.6,1.7},{11.6,1.7,13.2,2.1},{13.2,2.1,14.7,2.9},{14.7,2.9,16,4},{16,4,17.1,5.3},{17.1,5.3,17.8,6.7},{17.8,6.7,18.3,8.3},{18.3,8.3,18.5,10},{10,9.2,10,14.2},{10,5.6,10,6.3}},
+ gear={{16.4,10,15.9,12.5},{15.9,12.5,14.5,14.5},{14.5,14.5,12.4,15.9},{12.4,15.9,10,16.4},{10,16.4,7.5,15.9},{7.5,15.9,5.5,14.5},{5.5,14.5,4.1,12.5},{4.1,12.5,3.6,10},{3.6,10,4.1,7.6},{4.1,7.6,5.5,5.5},{5.5,5.5,7.5,4.1},{7.5,4.1,10,3.6},{10,3.6,12.4,4.1},{12.4,4.1,14.5,5.5},{14.5,5.5,15.9,7.5},{15.9,7.5,16.4,10},{12.5,10,12.3,10.9},{12.3,10.9,11.8,11.8},{11.8,11.8,11,12.3},{11,12.3,10,12.5},{10,12.5,9,12.3},{9,12.3,8.2,11.8},{8.2,11.8,7.7,11},{7.7,11,7.5,10},{7.5,10,7.7,9.1},{7.7,9.1,8.2,8.3},{8.2,8.3,9,7.7},{9,7.7,10,7.5},{10,7.5,10.9,7.7},{10.9,7.7,11.8,8.2},{11.8,8.2,12.3,9.1},{12.3,9.1,12.5,10},{16.4,10,19.3,10},{13.2,15.5,14.7,18.1},{6.8,15.5,5.4,18.1},{3.6,10,0.7,10},{6.8,4.5,5.3,1.9},{13.2,4.5,14.7,1.9}},
 }
-local gear={}
-for i=0,11 do
- local t=i*math.pi/6;local u=(i+1)*math.pi/6
- gear[#gear+1]={10+math.cos(t)*7,10+math.sin(t)*7,10+math.cos(u)*7,10+math.sin(u)*7}
- if i%2==0 then gear[#gear+1]={10+math.cos(t)*7,10+math.sin(t)*7,10+math.cos(t)*10,10+math.sin(t)*10} end
-end
-for i=0,7 do local t=i*math.pi/4;local u=(i+1)*math.pi/4;gear[#gear+1]={10+math.cos(t)*2.5,10+math.sin(t)*2.5,10+math.cos(u)*2.5,10+math.sin(u)*2.5} end
-paths.gear=gear
 local function icon(id,name,px,py,c,opacity,z,angle,scale)
  local strokes=type(name)=="table" and name or paths[name] or paths.script
  local cs,sn=math.cos(angle or 0),math.sin(angle or 0);scale=scale or 1
@@ -222,6 +218,8 @@ function app:RequestClose() requestClose() end
 local Tab={};Tab.__index=Tab
 local Control={};Control.__index=Control
 function Control:GetValue() return self.Value end
+function Control:SetText(text) self.Title=short(text,52);return self end
+function Control:SetDescription(text) self.Description=short(text,68);return self end
 function Control:SetValue(value,silent)
  if self.Kind=="toggle" then value=not not value
  elseif self.Kind=="slider" then value=clamp(tonumber(value) or self.Min,self.Min,self.Max);value=self.Min+math.floor((value-self.Min)/self.Step+0.5)*self.Step;value=clamp(value,self.Min,self.Max)
@@ -233,11 +231,12 @@ function Control:SetValue(value,silent)
  if changed and not silent then fire(self.Callback,value) end
  return self
 end
+Control.Set=Control.SetValue
 function Tab:_add(kind,o)
  assert(app.Alive,"UI has been destroyed")
  o=o or {};local c=setmetatable({Id=uid(),Kind=kind,Title=short(o.Title or kind,52),Description=short(o.Description or "",68),Callback=o.Callback},Control)
  c.Icon=o.Icon or ({button="bolt",toggle="power",slider="sliders",dropdown="layers",keybind="key",label="spark"})[kind]
- c.ButtonText=short(o.ButtonText or "Run",9)
+ c.ButtonText=short(o.ButtonText or "Run",9);c.Custom=o.Custom
  c.Min=tonumber(o.Min) or 0;c.Max=tonumber(o.Max) or 100;c.Step=tonumber(o.Step) or 1
  if kind=="slider" then assert(c.Max>c.Min and c.Step>0,"Slider requires Max > Min and Step > 0") end
  c.Options=o.Options or {};if kind=="dropdown" then assert(#c.Options>0,"Dropdown requires Options") end
@@ -251,6 +250,7 @@ function Tab:AddButton(o) return self:_add("button",o) end
 function Tab:AddToggle(o) return self:_add("toggle",o) end
 function Tab:AddSlider(o) return self:_add("slider",o) end
 function Tab:AddDropdown(o) return self:_add("dropdown",o) end
+function Tab:AddKeybind(o) o=o or {};o.Custom=true;return self:_add("keybind",o) end
 function Tab:AddLabel(o) if type(o)=="string" then o={Title=o} end;return self:_add("label",o) end
 local function replayTab(tab)
  animations.content=0;contentA=0;visitTime=motionClock;popup=nil;slide=nil;capture=nil
@@ -298,8 +298,8 @@ local function smallButton(id,glyph,px,py,fn,modal,z)
  icon(id.."i",glyph,px+4,py+4-hover,mix(muted,accent,hover),1,(z or 35)+1,0,1+hover*.12)
  if over and click then click=false;fn() end
 end
-local function beginCapture()
- capture={keys={}};popup=nil
+local function beginCapture(control)
+ capture={keys={},control=control};popup=nil
  for k=8,254 do capture.keys[k]=iskeypressed(k) end
 end
 local function renderControl(c,py,index)
@@ -342,10 +342,12 @@ local function renderControl(c,py,index)
   line(id.."chevron2",729,py+35-5*rotate,734,py+30+5*rotate,accent,contentA)
   if over and click then click=false;popup={control=c,x=579,y=math.min(py+53,H-186),offset=0};animations.dropdown=0 end
  elseif c.Kind=="keybind" then
-  box(id.."key",579,py+15,165,35,accent,(0.07+ease(id.."record",capture and 0.16 or hit(579,py+15,165,35) and 0.06 or 0))*contentA,8,30)
+  local mine=c.Custom and c or nil
+  local recording=capture and capture.control==mine
+  box(id.."key",579,py+15,165,35,accent,(0.07+ease(id.."record",recording and 0.16 or hit(579,py+15,165,35) and 0.06 or 0))*contentA,8,30)
   icon(id.."keyicon","key",588,py+22,accent,contentA)
-  label(id.."value",capture and "Press a key..." or keyName(app.Keybind),617,py+25,12,ink,contentA,true)
-  if hit(579,py+15,165,35) and click then click=false;beginCapture() end
+  label(id.."value",recording and "Press a key..." or (mine and (c.Value and keyName(c.Value) or "None") or keyName(app.Keybind)),617,py+25,12,ink,contentA,true)
+  if hit(579,py+15,165,35) and click then click=false;beginCapture(mine) end
  elseif c.Kind=="slider" then
   local sx,sw=584,156
   label(id.."value",string.format("%.2f",ease(id.."number",c.Value,18)):gsub("%.?0+$",""),680,py+8,11,accent,contentA,true)
@@ -485,10 +487,11 @@ local function renderCloseEffects(now)
   rect("closeCore",cx-lineW*.5,cy-math.max(.5,bs*.65),lineW,math.max(1,1.3*bs),accent,.90*(1-lineOut),1,174)
  end
  local wordA=(1-smooth((elapsed-duration*.58)/(duration*.22)))*smooth(elapsed/(duration*.16))
- if wordA>.01 then txt("closeWord","GBS",cx-18*bs,cy-27*bs,16*bs,ink,wordA,true,175) end
+ if wordA>.01 then txt("closeWord","JDUI",cx-19*bs,cy-27*bs,16*bs,ink,wordA,true,175) end
  if elapsed>=duration then app:Destroy();return true end
  return false
 end
+local introLetters={{"J",0},{"D",19},{"U",50},{"I",80}}
 local function renderIntro(now,vp)
  if introDone then return end
  if not introStart then introStart=now end
@@ -523,58 +526,27 @@ local function renderIntro(now,vp)
  local cx,cy=vp.X/2,vp.Y/2+(1-reveal)*8-leave*8
  local function logoEase(t)
   t=clamp(t,0,1)
-  local s=smooth(t)
-  local overshoot=math.sin(t*math.pi)*(1-t)
-  return s,overshoot
+  return smooth(t),math.sin(t*math.pi)*(1-t)
  end
-
- local rT,rPop=logoEase((elapsed-1.28)/.34)
- local eT,ePop=logoEase((elapsed-1.39)/.34)
- local mT,mPop=logoEase((elapsed-1.50)/.34)
-
- local wordX=cx-42*scale
- local wordY=cy-22*scale
-
- local rFinal=wordX
- local eFinal=wordX+28*scale
- local mFinal=wordX+56*scale
-
- local compressed=wordX+28*scale
-
- local rX=compressed+(rFinal-compressed)*rT-rPop*2.2*scale
- local eX=compressed+(eFinal-compressed)*eT
- local mX=compressed+(mFinal-compressed)*mT+mPop*2.2*scale
-
- local rY=wordY+(1-rT)*6*scale-rPop*1.4*scale
- local eY=wordY+(1-eT)*6*scale-ePop*1.4*scale
- local mY=wordY+(1-mT)*6*scale-mPop*1.4*scale
-
- txt("intro:echo:r","G",rX-2*scale,rY+1*scale,40*scale,white,opacity*rT*(1-rT)*.20,true,116)
- txt("intro:echo:e","B",eX-2*scale,eY+1*scale,40*scale,white,opacity*eT*(1-eT)*.20,true,116)
- txt("intro:echo:m","S",mX-2*scale,mY+1*scale,40*scale,white,opacity*mT*(1-mT)*.20,true,116)
-
- txt("intro:letter:r","G",rX,rY,40*scale,white,opacity*rT,true,117)
- txt("intro:letter:e","B",eX,eY,40*scale,white,opacity*eT,true,117)
- txt("intro:letter:m","S",mX,mY,40*scale,white,opacity*mT,true,117)
-
- local lock=smooth((elapsed-1.64)/.34)
- local sweepW=84*scale*lock
- rect("intro:logoSweep",
-  wordX,
-  wordY+42*scale,
-  sweepW,
-  math.max(1,1.15*scale),
-  white,
-  opacity*(1-lock)*.34,
-  1,
-  116)
-
+ local wordW=91*scale
+ local wordX,wordY=cx-wordW*.5,cy-22*scale
+ local compressed=cx-8*scale
+ for i,l in ipairs(introLetters) do
+  local t,pop=logoEase((elapsed-1.28-(i-1)*.11)/.34)
+  local final=wordX+l[2]*scale
+  local lx=compressed+(final-compressed)*t+pop*2.2*scale*(i-2.5)/1.5
+  local ly=wordY+(1-t)*6*scale-pop*1.4*scale
+  txt("intro:echo:"..i,l[1],lx-2*scale,ly+1*scale,40*scale,white,opacity*t*(1-t)*.20,true,116)
+  txt("intro:letter:"..i,l[1],lx,ly,40*scale,white,opacity*t,true,117)
+ end
+ local lock=smooth((elapsed-1.75)/.34)
+ rect("intro:logoSweep",wordX,wordY+42*scale,wordW*lock,math.max(1,1.15*scale),white,opacity*(1-lock)*.34,1,116)
 end
 local function render()
  local now=tick();dt=clamp(now-last,0,0.1);last=now;frame=frame+1
  if not app.ReducedMotion then motionClock=motionClock+dt end
  active=type(isrbxactive)~="function" or isrbxactive()
- down=active and ismouse1pressed();click=down and not previousDown;previousDown=down
+ down=active and ismouse1pressed() and not (app.InputGuard and app.InputGuard());click=down and not previousDown;previousDown=down
  mx,my=mouse.X,mouse.Y
  if not down then drag=nil;slide=nil end
  local wasCapture=capture~=nil
@@ -582,7 +554,9 @@ local function render()
   for k=8,254 do
    local held=iskeypressed(k)
    if held and not capture.keys[k] and k~=16 and k~=17 and k~=18 then
-    if k~=27 then app:SetKeybind(k) end
+    if k~=27 then
+     if capture.control then capture.control:SetValue(k) else app:SetKeybind(k) end
+    end
     capture=nil;break
    end
    capture.keys[k]=held
