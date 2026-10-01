@@ -42,7 +42,7 @@ local function copyStyle(t,where)
  end
  return out
 end
-local app={Version="1.0.3",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
+local app={Version="1.0.4",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
 env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -54,6 +54,13 @@ local a,contentA,dt,last=0,1,0,tick()
 local mx,my,down,click,active=0,0,false,false,true
 local previousDown,previousKey=false,false
 local drag,slide,popup,capture=nil,nil,nil,nil
+local inputTaken=false
+-- While the cursor is over the menu, clicks go to the menu only, not to the game behind it.
+local function takeInput(want)
+ if want==inputTaken then return end
+ inputTaken=want
+ if type(setrobloxinput)=="function" then pcall(setrobloxinput,not want) end
+end
 local tabOffset,selected=0,nil
 local sidebarOpen,sidebarWidth,contentLeft=0,66,99
 local sidebarLeaveTime=0
@@ -228,6 +235,7 @@ end
 function app:Destroy()
  if not self.Alive then return end
  self.Alive=false
+ takeInput(false)
  if connection then connection:Disconnect() end
  if introSound then pcall(function() introSound:Destroy() end);introSound=nil end
  for _,e in pairs(pool) do pcall(function() e.d:Remove() end) end
@@ -682,6 +690,9 @@ local function render()
   y=(closeCenterY or (y+H*S*.5))-H*S*.5
   a=a*(1-fade);contentA=contentA*(1-fade)
  end
+ local overMenu=mx>=x and mx<=x+W*S and my>=y and my<=y+H*S
+ local scriptBusy=(app.InputGuard and app.InputGuard()) or (app.CaptureGuard and app.CaptureGuard()==false)
+ takeInput(app.CaptureInput~=false and app.Visible and introDone and not closingStarted and a>.5 and active and not scriptBusy and (overMenu or drag~=nil or slide~=nil))
  local b=1-math.exp(-dt*9);local theme=themes[targetTheme]
  tint=approach(tint,theme.Base,b);ink=approach(ink,theme.Text,b);muted=approach(muted,theme.Muted,b);accent=approach(accent,theme.Accent,b)
  themeControl.Value=app.Theme

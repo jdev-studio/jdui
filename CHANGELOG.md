@@ -4,6 +4,12 @@ The current version is in `ui.Version`.
 
 **Numbering:** each new feature or fix gets the next `1.0.x` number. If it takes more than one try to get right, the follow ups get a letter: `1.0.1`, `1.0.1b`, `1.0.1c` and so on. The next feature moves on to `1.0.2`.
 
+## 1.0.4 - 2026-10-02
+
+- Clicking the menu no longer clicks the game behind it. While the cursor is over the menu (or you're dragging it or a slider), game input is turned off with `setrobloxinput`, and turned back on when the cursor leaves, the menu is hidden or closed, or Roblox isn't focused. Matcha's own UI does the same.
+- New `ui.CaptureInput` (on by default) and `ui.CaptureGuard` (return `false` to let the game keep its input, e.g. while your script is clicking). While `ui.InputGuard` returns `true` the game keeps its input as well.
+- Docs: new sections on the order of tabs, hiding tabs and tab icons, removing and showing controls, changing dropdown options, how callbacks run, key codes and troubleshooting, plus more detail on sliders, keybinds and input.
+
 ## 1.0.3 - 2026-10-01
 
 Controls can now be resized. Thanks to the person on Discord who asked for smaller toggles and sliders. Everything is documented in [Sizes and layout](README.md#sizes-and-layout).
