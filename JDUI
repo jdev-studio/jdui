@@ -19,8 +19,30 @@ local function approach(a,b,t)
  if math.abs(b.R-r)<1e-4 and math.abs(b.G-g)<1e-4 and math.abs(b.B-bl)<1e-4 then return b end
  return Color3.new(r,g,bl)
 end
-local function short(s,n) s=tostring(s or "");return #s>n and s:sub(1,n-3).."..." or s end
-local app={Version="1.0.2b",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true}
+local function short(s,n)
+ s=tostring(s or "");n=math.max(0,math.floor(n))
+ if #s<=n then return s end
+ return n<4 and s:sub(1,n) or s:sub(1,n-3).."..."
+end
+local layoutDefaults={Height=65,Gap=12,Width=1,Padding=13,Corner=12,Border=1,IconSize=31,TitleSize=14,DescriptionSize=11,ShowDescription=true,
+ ToggleWidth=46,ToggleHeight=24,SliderWidth=156,BoxWidth=165,BoxHeight=35,ButtonWidth=94,ButtonHeight=34}
+local layoutLimits={Height={20,296},Gap={0,60},Width={0.05,1},Padding={0,40},Corner={0,30},Border={0,6},IconSize={0,60},TitleSize={8,30},DescriptionSize={8,24},
+ ToggleWidth={20,120},ToggleHeight={10,40},SliderWidth={40,400},BoxWidth={60,400},BoxHeight={14,60},ButtonWidth={30,300},ButtonHeight={14,60}}
+local layoutPresets={Default={},Compact={Height=36,Gap=6,Padding=9,Corner=9,IconSize=22,TitleSize=13,ToggleWidth=34,ToggleHeight=18,SliderWidth=130,BoxWidth=140,BoxHeight=26,ButtonWidth=80,ButtonHeight=26}}
+local function copyStyle(t,where)
+ local out={}
+ if t==nil then return out end
+ assert(type(t)=="table",where.." must be a table")
+ for k,v in pairs(t) do
+  local d=layoutDefaults[k]
+  assert(d~=nil,"Unknown style key '"..tostring(k).."'")
+  assert(type(v)==type(d),"Style key "..k.." must be a "..type(d))
+  if k=="Width" then assert(v>0 and v<=1,"Width is a fraction of the row, above 0 and up to 1") end
+  out[k]=v
+ end
+ return out
+end
+local app={Version="1.0.3",StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
 env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -178,6 +200,20 @@ function app:SetTheme(name)
  for i,t in ipairs(themes) do if string.lower(t.Name)==string.lower(tostring(name)) then targetTheme=i;self.Theme=t.Name;return true end end
  return false
 end
+function app:SetLayout(layout)
+ if type(layout)=="string" then
+  local preset
+  for name,p in pairs(layoutPresets) do if name:lower()==layout:lower() then preset=p end end
+  assert(preset,"Unknown layout '"..layout.."' (use \"Default\" or \"Compact\")")
+  local t=copyStyle(layoutDefaults,"Layout");for k,v in pairs(preset) do t[k]=v end
+  self.Layout=t
+ else
+  local t=type(self.Layout)=="table" and self.Layout or copyStyle(layoutDefaults,"Layout")
+  for k,v in pairs(copyStyle(layout,"Layout")) do t[k]=v end
+  self.Layout=t
+ end
+ return self
+end
 local function keyName(k)
  local names={[0xA0]="Left Shift",[0xA1]="Right Shift",[0xA2]="Left Ctrl",[0xA3]="Right Ctrl",[0xA4]="Left Alt",[0xA5]="Right Alt",[0x2D]="Insert",[0x24]="Home",[0x23]="End",[0x20]="Space",[0x09]="Tab",[0x0D]="Enter",[0x2E]="Delete"}
  if names[k] then return names[k] end
@@ -222,6 +258,8 @@ local Control={};Control.__index=Control
 function Control:GetValue() return self.Value end
 function Control:SetText(text) self.Title=short(text,52);return self end
 function Control:SetDescription(text) self.Description=short(text,68);return self end
+local function setStyle(self,style) for k,v in pairs(copyStyle(style,"Style")) do self.Style[k]=v end;return self end
+Control.SetStyle=setStyle;Tab.SetStyle=setStyle
 function Control:SetValue(value,silent)
  if self.Kind=="toggle" then value=not not value
  elseif self.Kind=="slider" then value=clamp(tonumber(value) or self.Min,self.Min,self.Max);value=self.Min+math.floor((value-self.Min)/self.Step+0.5)*self.Step;value=clamp(value,self.Min,self.Max)
@@ -236,7 +274,7 @@ end
 Control.Set=Control.SetValue
 function Tab:_add(kind,o)
  assert(app.Alive,"UI has been destroyed")
- o=o or {};local c=setmetatable({Id=uid(),Kind=kind,Title=short(o.Title or kind,52),Description=short(o.Description or "",68),Callback=o.Callback},Control)
+ o=o or {};local c=setmetatable({Id=uid(),Kind=kind,Title=short(o.Title or kind,52),Description=short(o.Description or "",68),Callback=o.Callback,Style=copyStyle(o.Style,"Style"),_st={}},Control)
  c.Icon=o.Icon or ({button="bolt",toggle="power",slider="sliders",dropdown="layers",keybind="key",label="spark"})[kind]
  c.ButtonText=short(o.ButtonText or "Run",9);c.Custom=o.Custom
  c.Min=tonumber(o.Min) or 0;c.Max=tonumber(o.Max) or 100;c.Step=tonumber(o.Step) or 1
@@ -272,7 +310,7 @@ function Tab:Select()
 end
 function app:AddTab(o)
  if type(o)=="string" then o={Title=o} end
- o=o or {};local tab=setmetatable({Id=uid(),Title=short(o.Title or "Tab",18),Icon=o.Icon or "script",Controls={},Page=1},Tab)
+ o=o or {};local tab=setmetatable({Id=uid(),Title=short(o.Title or "Tab",18),Icon=o.Icon or "script",Controls={},Page=1,Style=copyStyle(o.Style,"Style")},Tab)
  animations[tab.Id.."appear"]=0
  self.Tabs[#self.Tabs+1]=tab;if not selected then selected=tab end;return tab
 end
@@ -304,89 +342,146 @@ local function beginCapture(control)
  capture={keys={},control=control};popup=nil
  for k=8,254 do capture.keys[k]=iskeypressed(k) end
 end
-local function renderControl(c,py,index)
- local id=c.Id;local px=contentLeft;local width=761-px
+local REF_WIDTH,AREA_HEIGHT,empty=662,296,{}
+local function resolveStyle(c,tab)
+ local st,own,shared=c._st,c.Style or empty,tab.Style or empty
+ local layout=type(app.Layout)=="table" and app.Layout or layoutDefaults
+ for k,d in pairs(layoutDefaults) do
+  local v=own[k];if v==nil then v=shared[k] end;if v==nil then v=layout[k] end
+  if k=="ShowDescription" then st[k]=v~=false
+  else local lim=layoutLimits[k];st[k]=clamp(tonumber(v) or d,lim[1],lim[2]) end
+ end
+ return st
+end
+local function layoutTab(tab)
+ local controls=tab.Controls
+ local page,y,first,used,h,gap=1,0,1,0,0,0
+ for i=1,#controls+1 do
+  local c=controls[i];local st=c and resolveStyle(c,tab)
+  if i>first and (not c or used+st.Width>1.001) then
+   if y>0 and y+h>AREA_HEIGHT then page=page+1;y=0 end
+   local offset=0
+   for j=first,i-1 do
+    local item=controls[j]
+    item._page,item._y,item._h,item._gap,item._x=page,y,h,gap,offset
+    offset=offset+item._st.Width
+   end
+   y=y+h+gap;first,used,h,gap=i,0,0,0
+  end
+  if c then used=used+st.Width;h=math.max(h,st.Height);gap=math.max(gap,st.Gap) end
+ end
+ return page
+end
+local function center(total,size) return math.floor((total-size)/2+.5) end
+local function renderControl(c,px,py,width,height,refWidth,index)
+ local id,st,kind=c.Id,c._st,c.Kind
  local enter=ease(id.."appear",(app.ReducedMotion or motionClock-visitTime>(index-1)*0.045) and 1 or 0,13)
  local contentA=contentA*enter
  py=py+(1-enter)*10
- local hovered=hit(px,py,width,65)
+ local right,mid,pad=px+width,py+height/2,st.Padding
+ local hovered=hit(px,py,width,height)
  local hover=ease(id.."cardhover",hovered and 1 or 0,14)
  local surface=mix(tint,white,0.035+hover*0.022)
- box(id.."border",px-hover,py-hover,width+hover*2,65+hover*2,mix(ink,accent,hover),(.065+hover*.13)*contentA,12,22)
- box(id.."card",px+1,py+1,width-2,63,surface,(.48+hover*.14)*contentA,11,23)
- box(id.."badge",px+13,py+17,31,31,accent,(.055+hover*.07)*contentA,9,25)
- icon(id.."customicon",c.Icon,px+18.5,py+22.5-hover*2,mix(muted,accent,hover),contentA,28,hover*.08,1+hover*.1)
- local right=c.Kind=="label" and 0 or 195
- label(id.."title",short(c.Title,right>0 and 28 or 52),px+57+hover*3,py+13,14,ink,contentA,true)
- label(id.."description",short(c.Description,right>0 and 38 or 66),px+57+hover*3,py+37,11,muted,contentA)
+ local border,corner=st.Border,st.Corner
+ if border>0 then box(id.."border",px-hover,py-hover,width+hover*2,height+hover*2,mix(ink,accent,hover),(.065+hover*.13)*contentA,corner,22) end
+ box(id.."card",px+border,py+border,width-border*2,height-border*2,surface,(.48+hover*.14)*contentA,math.max(0,corner-border),23)
+ local textX,iconSize=pad,st.IconSize
+ if iconSize>0 then
+  local scale,by=iconSize/31,py+center(height,iconSize)
+  box(id.."badge",px+pad,by,iconSize,iconSize,accent,(.055+hover*.07)*contentA,9*scale,25)
+  icon(id.."customicon",c.Icon,px+pad+iconSize/2-10,by+iconSize/2-10-hover*2*scale,mix(muted,accent,hover),contentA,28,hover*.08,scale*(1+hover*.1))
+  textX=pad+iconSize+pad
+ end
+ local stacked=height>=50
+ local reserve=kind=="button" and st.ButtonWidth+pad+16 or kind=="toggle" and st.ToggleWidth+pad+19
+  or (kind=="dropdown" or kind=="keybind") and st.BoxWidth+pad+16 or kind=="slider" and st.SliderWidth+pad+20+(stacked and 0 or 48) or 0
+ local avail,ts,ds=refWidth-textX-reserve,st.TitleSize,st.DescriptionSize
+ local twoLine=st.ShowDescription and height>=ts+ds+22
+ local titleY=twoLine and mid-(ts+10+ds)/2-2 or mid-ts/2-1
+ label(id.."title",short(c.Title,avail/(ts*.83)),px+textX+hover*3,titleY,ts,ink,contentA,true)
+ if twoLine then label(id.."description",short(c.Description,avail/(ds*.83)),px+textX+hover*3,titleY+ts+10,ds,muted,contentA) end
  if hovered and click and not app.ReducedMotion then
-  pulsePoints[#pulsePoints+1]={x=clamp((mx-x)/S,px+10,px+width-10),y=clamp((my-y)/S,py+10,py+55),time=motionClock}
+  pulsePoints[#pulsePoints+1]={x=clamp((mx-x)/S,px+10,right-10),y=clamp((my-y)/S,py+10,py+height-10),time=motionClock}
   if #pulsePoints>6 then table.remove(pulsePoints,1) end
  end
- if c.Kind=="button" then
-  local over=hit(650,py+15,94,34)
+ if kind=="button" then
+  local bw,bh=st.ButtonWidth,math.min(st.ButtonHeight,height-4)
+  local bx,by=right-pad-4-bw,py+center(height,bh)
+  local over=hit(bx,by,bw,bh)
   local pulse=ease(id.."press",0,9)
-  box(id.."button",650+pulse*2,py+15+pulse,94-pulse*4,34-pulse*2,accent,(0.14+pulse*0.25+ease(id.."hover",over and 0.13 or 0))*contentA,9,30)
-  label(id.."run",c.ButtonText,667,py+24,12,ink,contentA,true);icon(id.."arrow","right",717,py+22,accent,contentA)
+  box(id.."button",bx+pulse*2,by+pulse,bw-pulse*4,bh-pulse*2,accent,(0.14+pulse*0.25+ease(id.."hover",over and 0.13 or 0))*contentA,math.min(9,bh/2),30)
+  label(id.."run",c.ButtonText,bx+17,by+bh/2-8,12,ink,contentA,true);icon(id.."arrow","right",bx+bw-27,by+bh/2-10,accent,contentA)
   if over and click then click=false;animations[id.."press"]=1;fire(c.Callback) end
- elseif c.Kind=="toggle" then
+ elseif kind=="toggle" then
+  local tw,th=st.ToggleWidth,math.min(st.ToggleHeight,height-4)
+  local tx,ty=right-pad-7-tw,py+center(height,th)
+  local knob=math.max(4,math.min(th-8,tw-12))
+  local ky=ty+(th-knob)/2
   local v=ease(id.."switch",c.Value and 1 or 0)
-  glow(id.."toggleGlow",699,py+25,38,16,v*contentA,29)
-  box(id.."switch",695,py+21,46,24,mix(muted,accent,v),(0.16+v*0.5)*contentA,12,30)
-  box(id.."knob",699+22*v,py+25,16,16,ink,contentA,8,31)
-  if hit(680,py+12,65,42) and click then click=false;c:SetValue(not c.Value) end
- elseif c.Kind=="dropdown" then
-  local over=hit(579,py+15,165,35)
-  box(id.."select",579,py+15,165,35,ink,(0.055+ease(id.."hover",over and 0.065 or 0))*contentA,8,30)
-  label(id.."value",short(c.Value,17),592,py+25,12,ink,contentA,true)
+  glow(id.."toggleGlow",tx+4,ky,tw-8,knob,v*contentA,29)
+  box(id.."switch",tx,ty,tw,th,mix(muted,accent,v),(0.16+v*0.5)*contentA,th/2,30)
+  box(id.."knob",tx+4+(tw-8-knob)*v,ky,knob,knob,ink,contentA,knob/2,31)
+  if hit(tx-15,ty-9,tw+19,th+18) and click then click=false;c:SetValue(not c.Value) end
+ elseif kind=="dropdown" then
+  local bw,bh=st.BoxWidth,math.min(st.BoxHeight,height-4)
+  local bx,by=right-pad-4-bw,py+center(height,bh)
+  local over=hit(bx,by,bw,bh)
+  box(id.."select",bx,by,bw,bh,ink,(0.055+ease(id.."hover",over and 0.065 or 0))*contentA,math.min(8,bh/2),30)
+  label(id.."value",short(c.Value,(bw-35)/7.6),bx+13,by+bh/2-7.5,12,ink,contentA,true)
   local rotate=ease(id.."rotate",popup and popup.control==c and not popup.Closing and 1 or 0)
-  line(id.."chevron1",724,py+30+5*rotate,729,py+35-5*rotate,accent,contentA)
-  line(id.."chevron2",729,py+35-5*rotate,734,py+30+5*rotate,accent,contentA)
-  if over and click then click=false;popup={control=c,x=579,y=math.min(py+53,H-186),offset=0};animations.dropdown=0 end
- elseif c.Kind=="keybind" then
+  local chevronY=by+bh/2
+  line(id.."chevron1",bx+bw-20,chevronY-2.5+5*rotate,bx+bw-15,chevronY+2.5-5*rotate,accent,contentA)
+  line(id.."chevron2",bx+bw-15,chevronY+2.5-5*rotate,bx+bw-10,chevronY-2.5+5*rotate,accent,contentA)
+  if over and click then click=false;popup={control=c,x=bx,y=math.min(by+bh+3,H-186),w=math.max(120,bw),offset=0};animations.dropdown=0 end
+ elseif kind=="keybind" then
+  local bw,bh=st.BoxWidth,math.min(st.BoxHeight,height-4)
+  local bx,by=right-pad-4-bw,py+center(height,bh)
   local mine=c.Custom and c or nil
   local recording=capture and capture.control==mine
-  box(id.."key",579,py+15,165,35,accent,(0.07+ease(id.."record",recording and 0.16 or hit(579,py+15,165,35) and 0.06 or 0))*contentA,8,30)
-  icon(id.."keyicon","key",588,py+22,accent,contentA)
-  label(id.."value",recording and "Press a key..." or (mine and (c.Value and keyName(c.Value) or "None") or keyName(app.Keybind)),617,py+25,12,ink,contentA,true)
-  if hit(579,py+15,165,35) and click then click=false;beginCapture(mine) end
- elseif c.Kind=="slider" then
-  local sx,sw=584,156
-  label(id.."value",string.format("%.2f",ease(id.."number",c.Value,18)):gsub("%.?0+$",""),680,py+8,11,accent,contentA,true)
-  if hit(sx-6,py+26,sw+12,28) and click then slide=c;click=false end
+  local over=hit(bx,by,bw,bh)
+  box(id.."key",bx,by,bw,bh,accent,(0.07+ease(id.."record",recording and 0.16 or over and 0.06 or 0))*contentA,math.min(8,bh/2),30)
+  icon(id.."keyicon","key",bx+9,by+bh/2-10.5,accent,contentA)
+  label(id.."value",recording and "Press a key..." or (mine and (c.Value and keyName(c.Value) or "None") or keyName(app.Keybind)),bx+38,by+bh/2-7.5,12,ink,contentA,true)
+  if over and click then click=false;beginCapture(mine) end
+ elseif kind=="slider" then
+  local sw=st.SliderWidth
+  local sx=right-pad-8-sw
+  local trackY=stacked and mid+6.5 or mid-1.5
+  label(id.."value",string.format("%.2f",ease(id.."number",c.Value,18)):gsub("%.?0+$",""),stacked and sx+sw-60 or sx-48,stacked and mid-24.5 or mid-7,11,accent,contentA,true)
+  if hit(sx-6,trackY-13,sw+12,28) and click then slide=c;click=false end
   if slide==c and down and active and not popup and not capture then c:SetValue(c.Min+clamp((mx-x-sx*S)/(sw*S),0,1)*(c.Max-c.Min)) end
   local t=ease(id.."fill",(c.Value-c.Min)/(c.Max-c.Min))
-  box(id.."track",sx,py+39,sw,3,ink,0.14*contentA,2,30)
-  box(id.."fill",sx,py+39,sw*t,3,accent,contentA,2,31)
-  glow(id.."sliderGlow",sx+sw*t-3,py+37,7,7,contentA,30)
-  box(id.."thumb",sx+sw*t-5,py+35,11,11,ink,contentA,6,32)
+  box(id.."track",sx,trackY,sw,3,ink,0.14*contentA,2,30)
+  box(id.."fill",sx,trackY,sw*t,3,accent,contentA,2,31)
+  glow(id.."sliderGlow",sx+sw*t-3,trackY-2,7,7,contentA,30)
+  box(id.."thumb",sx+sw*t-5,trackY-4,11,11,ink,contentA,6,32)
  end
 end
 local function renderPopup()
  if not popup then return end
- local p=popup;local c=p.control;local reveal=ease("dropdown",p.Closing and 0 or 1,20);local py=p.y+(1-reveal)*-6
+ local p=popup;local c=p.control;local w=p.w;local reveal=ease("dropdown",p.Closing and 0 or 1,20);local py=p.y+(1-reveal)*-6
  if p.Closing and reveal<0.01 then popup=nil;return end
  local count=math.min(4,#c.Options-p.offset);local extra=#c.Options>4 and 29 or 0
  local height=count*32+12+extra
- box("dropdownshadow",p.x-4,py+3,173,height+5,black,.4*reveal,13,68)
- box("dropdownrim",p.x-1,py-1,167,height+2,accent,.25*reveal,11,69)
- box("dropdown",p.x,py,165,height,mix(tint,white,.045),reveal,10,70)
+ box("dropdownshadow",p.x-4,py+3,w+8,height+5,black,.4*reveal,13,68)
+ box("dropdownrim",p.x-1,py-1,w+2,height+2,accent,.25*reveal,11,69)
+ box("dropdown",p.x,py,w,height,mix(tint,white,.045),reveal,10,70)
  for j=1,count do
   local value=c.Options[p.offset+j];local rowY=py+6+(j-1)*32
-  local over=hit(p.x+5,rowY,155,30,true)
+  local over=hit(p.x+5,rowY,w-10,30,true)
   local chosen=c.Value==value
   local hover=ease("optionmotion"..j,over and 1 or 0,16)
   box("optionrail"..j,p.x+6,rowY+8,2,14,accent,hover*reveal,1,72)
-  box("option"..j,p.x+5,rowY,155,30,accent,ease("optionhover"..j,chosen and 0.22+hover*.08 or hover*.16)*reveal,7,71)
-  label("optiontext"..j,short(value,17),p.x+12+hover*4,rowY+9,12,mix(chosen and accent or ink,accent,hover*.6),reveal,chosen,73)
-  if chosen then icon("optioncheck"..j,"check",p.x+136,rowY+5,accent,reveal,73) end
+  box("option"..j,p.x+5,rowY,w-10,30,accent,ease("optionhover"..j,chosen and 0.22+hover*.08 or hover*.16)*reveal,7,71)
+  label("optiontext"..j,short(value,(w-35)/7.6),p.x+12+hover*4,rowY+9,12,mix(chosen and accent or ink,accent,hover*.6),reveal,chosen,73)
+  if chosen then icon("optioncheck"..j,"check",p.x+w-29,rowY+5,accent,reveal,73) end
   if over and click then click=false;c:SetValue(value);p.Closing=true;break end
  end
  if popup and extra>0 then
-  smallButton("optionsprev","left",p.x+100,py+height-29,function() p.offset=math.max(0,p.offset-4) end,true,74)
-  smallButton("optionsnext","right",p.x+130,py+height-29,function() p.offset=math.min(math.floor((#c.Options-1)/4)*4,p.offset+4) end,true,74)
+  smallButton("optionsprev","left",p.x+w-65,py+height-29,function() p.offset=math.max(0,p.offset-4) end,true,74)
+  smallButton("optionsnext","right",p.x+w-35,py+height-29,function() p.offset=math.min(math.floor((#c.Options-1)/4)*4,p.offset+4) end,true,74)
  end
- if popup and click and not hit(p.x,py,165,height,true) then p.Closing=true;click=false end
+ if popup and click and not hit(p.x,py,w,height,true) then p.Closing=true;click=false end
 end
 local borderRadius=17
 local borderHorizontal=W-2*borderRadius
@@ -652,7 +747,7 @@ local function render()
   label("keyhint",string.upper(keyName(app.Keybind)),56,420,9,muted,0.9*sidebarText,true)
   label("title",selected.Title,contentLeft,29,25,ink,contentA,true)
   smallButton("close","close",752,23,requestClose)
-  local pages=math.max(1,math.ceil(#selected.Controls/4));selected.Page=clamp(selected.Page,1,pages)
+  local pages=layoutTab(selected);selected.Page=clamp(selected.Page,1,pages)
   if selected==home and #home.Controls==1 then
    local ca=contentA
    local bob=app.ReducedMotion and 0 or math.sin(motionClock*1.5)*2
@@ -662,7 +757,15 @@ local function render()
    label("welcomeText","Welcome.",contentLeft+97,211+enter*12,34,ink,ca,true)
 
   else
-  for i=1,4 do local c=selected.Controls[(selected.Page-1)*4+i];if c then renderControl(c,99+(i-1)*77,i);if not app.Alive then return end end end
+   local fullWidth,index=761-contentLeft,0
+   for _,c in ipairs(selected.Controls) do
+    if c._page==selected.Page then
+     index=index+1
+     local gap,width=c._gap,c._st.Width
+     renderControl(c,contentLeft+c._x*(fullWidth+gap),99+c._y,width*(fullWidth+gap)-gap,c._h,width*(REF_WIDTH+gap)-gap,index)
+     if not app.Alive then return end
+    end
+   end
   end
   if pages>1 then
    label("pagenumber",selected.Page.." / "..pages,632,421,11,muted,1)

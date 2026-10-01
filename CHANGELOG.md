@@ -4,6 +4,29 @@ The current version is in `ui.Version`.
 
 **Numbering:** each new feature or fix gets the next `1.0.x` number. If it takes more than one try to get right, the follow-ups get a letter: `1.0.1`, `1.0.1b`, `1.0.1c` and so on. The next feature moves on to `1.0.2`.
 
+## 1.0.3 - 2026-10-01
+
+Controls can now be resized. Thanks to the person on Discord who asked for smaller toggles and sliders. Everything is documented in [Sizes and layout](README.md#sizes-and-layout).
+
+**New**
+
+- `ui:SetLayout("Compact")` makes every control a slim single-line row, so 7 fit on a page instead of 4. `ui:SetLayout("Default")` goes back.
+- `ui:SetLayout({ ... })` changes individual sizes for the whole menu, on top of whichever preset is active. The current values are in `ui.Layout`.
+- `Style = { ... }` option on `AddTab` and on every `Add...` control, plus `tab:SetStyle()` and `control:SetStyle()`. A control's style beats its tab's, and a tab's beats the menu layout.
+- 17 style keys: `Height`, `Gap`, `Width`, `Padding`, `Corner`, `Border`, `IconSize`, `TitleSize`, `DescriptionSize`, `ShowDescription`, `ToggleWidth`, `ToggleHeight`, `SliderWidth`, `BoxWidth`, `BoxHeight`, `ButtonWidth`, `ButtonHeight`.
+- Controls can sit side by side: `Width = 0.5` puts two in a row and `Width = 1/3` puts three.
+- Misspelled style keys, wrong types and bad `Width` values raise a clear error. Numbers out of range are clamped instead of breaking the menu.
+
+**Changed**
+
+- Pages are filled by height instead of "4 per page". At the default size that's still 4.
+- Titles and descriptions are cut to fit the space each card actually has, so toggles and buttons show more of a long title than before (toggle titles used to stop at 28 characters).
+- Rows too short for two lines show just the title, centred. Short slider rows show the value to the left of the track.
+- The dropdown list is as wide as its box.
+- Buttons sit 1 pixel lower because of how the new layout rounds positions. You won't notice it.
+
+**Unchanged:** with no style set, every control is drawn at the same size and position as in 1.0.2b, so scripts already using JDUI look the same.
+
 ## 1.0.2b - 2026-09-30
 
 - The menu is also stored in `_G.JDUI`. Matcha drops the value a loadstring returns, so `loadstring(...)()` came back empty there. Use `loadstring(...)() or _G.JDUI`.
