@@ -11,7 +11,7 @@ The menu used by my Grand Blue and Find a Needle scripts, on its own so it can b
 - [Sizes and layout](#sizes-and-layout)
 - [Notifications](#notifications)
 - [Menu settings](#menu-settings)
-- [The built-in tabs](#the-built-in-tabs)
+- [The built in tabs](#the-built-in-tabs)
 - [Icons](#icons)
 - [Recipes](#recipes)
 - [Limits](#limits)
@@ -74,7 +74,7 @@ main:Select()
 - **Right Shift** shows and hides the menu (changeable, see [Menu settings](#menu-settings)).
 - Drag the window by its top bar. It scales down on small screens.
 - The sidebar opens when you hover it and shows the tab names. Up to 5 tabs are visible at once; arrows appear to scroll through more.
-- Controls fill each page from top to bottom: 4 per page at the default size, 7 with the Compact layout, 14 with compact half-width toggles (see [Sizes and layout](#sizes-and-layout)). When they don't all fit, arrows and a page number appear in the bottom right.
+- Controls fill each page from top to bottom: 4 per page at the default size, 7 with the Compact layout, 14 with compact half width toggles (see [Sizes and layout](#sizes-and-layout)). When they don't all fit, arrows and a page number appear in the bottom right.
 - The **X** in the top right asks "Are you sure?" and then closes the menu for good (`ui:Destroy()`).
 - Callbacks run in their own thread, so a slow callback doesn't freeze the menu. If a callback errors, the error shows up as a red notification instead of breaking the menu.
 
@@ -204,7 +204,7 @@ All controls start at the sizes the menu always had. You can make them smaller (
 ui:SetLayout("Compact")
 ```
 
-This makes every control a slim single-line row: 7 per page instead of 4. It works before or after you add controls and applies straight away. `ui:SetLayout("Default")` goes back.
+This makes every control a slim single line row: 7 per page instead of 4. It works before or after you add controls and applies straight away. `ui:SetLayout("Default")` goes back.
 
 ### Where sizes can be set
 
@@ -214,7 +214,7 @@ Sizes are set with a style table. There are three places to put one, and the mos
 2. **One tab:** `ui:AddTab({ Title = "Visuals", Style = { Height = 36 } })` or `tab:SetStyle({ Height = 36 })`
 3. **The whole menu:** `ui:SetLayout({ Height = 36 })` or `ui:SetLayout("Compact")`
 
-For each key JDUI checks the control first, then its tab, then the menu layout, then the built-in default. A style only needs the keys you want to change.
+For each key JDUI checks the control first, then its tab, then the menu layout, then the built in default. A style only needs the keys you want to change.
 
 ### All style keys
 
@@ -361,7 +361,7 @@ They slide in at the top left, show a progress bar and stack up to 4 at a time. 
 | `ui:Destroy()` | Removes the menu and all its drawings |
 | `ui:RequestClose()` | Opens the "Are you sure?" close prompt |
 
-`InputGuard` is for scripts that click the mouse themselves. Without it, an auto-clicker could press menu buttons by accident:
+`InputGuard` is for scripts that click the mouse themselves. Without it, an auto clicker could press menu buttons by accident:
 
 ```lua
 ui.InputGuard = function()
@@ -371,7 +371,7 @@ end
 
 To start with the menu hidden, set `ui.Visible = false` right after loading. Pressing the menu key opens it.
 
-## The built-in tabs
+## The built in tabs
 
 - `ui.Home` has a "Welcome." label.
 - `ui.Settings` has a theme dropdown, the menu keybind, and a "Test notification" button.
@@ -462,7 +462,7 @@ end
 
 ## Limits
 
-- Text is cut off with `...` when it doesn't fit its card. Titles are stored up to 52 characters and descriptions up to 68. At the default size a full-width label shows about that much (52 and 66), and other controls show less depending on how wide their switch, box or slider is. Tab names are cut at 18.
+- Text is cut off with `...` when it doesn't fit its card. Titles are stored up to 52 characters and descriptions up to 68. At the default size a full width label shows about that much (52 and 66), and other controls show less depending on how wide their switch, box or slider is. Tab names are cut at 18.
 - As many rows per page as fit in 296 pixels (4 at the default size), and 5 tabs visible at a time. The rest are reached with the arrows.
 - Only one JDUI menu can be open at a time. Loading a second one closes the first.
 
