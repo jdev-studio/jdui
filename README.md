@@ -1,6 +1,6 @@
 # jdui
 
-The menu used by my Grand Blue and Find a Needle scripts, on its own so it can be dropped into other scripts. Everything is drawn with the Drawing API, so it works on external executors (written against Matcha). No images, about 45 KB.
+The menu used by my Grand Blue and Find a Needle scripts, on its own so it can be dropped into other scripts. Everything is drawn with the Drawing API, so it works on external executors (written against Matcha). No images, about 58 KB.
 
 - [Loading it](#loading-it)
 - [Quick start](#quick-start)
@@ -462,7 +462,7 @@ The current menu values are in `ui.Layout` (for example `ui.Layout.Height`).
 - A row is as tall as its tallest control, and every card in the row stretches to that height. The space below the row is the biggest `Gap` in it.
 - A page has 296 pixels of room (between the title line and the page arrows). A row that doesn't fit goes on the next page.
 
-So at the default size 4 rows fit (4 × 65 + 3 × 12 = 296), and at the Compact size 7 fit (7 × 36 + 6 × 6 = 288).
+So at the default size 4 rows fit (4 Ã— 65 + 3 Ã— 12 = 296), and at the Compact size 7 fit (7 Ã— 36 + 6 Ã— 6 = 288).
 
 ### What adjusts by itself
 
