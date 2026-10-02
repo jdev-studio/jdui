@@ -9,6 +9,7 @@ The menu used by my Grand Blue and Find a Needle scripts, on its own so it can b
 - [Controls](#controls)
 - [Changing controls later](#changing-controls-later)
 - [Sizes and layout](#sizes-and-layout)
+- [Saving settings](#saving-settings)
 - [Notifications](#notifications)
 - [Menu settings](#menu-settings)
 - [The built in tabs](#the-built-in-tabs)
@@ -401,6 +402,37 @@ end })
 
 `SetLayout`, `SetStyle`, `AddTab` and every `Add...` check the style you pass. A misspelled key (`"Unknown style key 'Hieght'"`), a wrong type (`Height = "big"`), a `Width` of 0 or more than 1, or an unknown layout name raises an error, so the problem shows up right away instead of being silently ignored. Numbers outside the allowed range are clamped to it. That includes values you put straight into `ui.Layout` or `control.Style`, which skip the check.
 
+## Saving settings
+
+One line makes the menu remember everything the player sets:
+
+```lua
+ui:SetConfig("myscript")
+```
+
+From then on, every toggle, slider, dropdown and keybind box is saved to `myscript.json` in the executor's workspace folder (on Matcha that's `C:\matcha\workspace`), along with the theme and the menu key. Next time the script runs, the same line loads them back.
+
+- **When it saves:** half a second after the last change, so dragging a slider writes the file once, not every frame. It also saves when the menu is closed.
+- **When it loads:** straight away for controls that already exist, and for controls you add later, as soon as they're made. So you can call `SetConfig` before or after adding your controls.
+- **Callbacks run on load.** A saved toggle that was on calls its callback with `true` when it's restored, so your feature starts the same way as if the player had clicked it. If you don't want that for a feature, check a flag in the callback.
+- **Buttons and labels** aren't saved, since they have no value.
+- **Saved values that no longer fit** are skipped: a dropdown option that was removed, or a keybind on a control that's gone. Slider values are snapped to the slider's current `Min`, `Max` and `Step`.
+
+**How controls are named in the file.** Each control is saved under `Tab/Title`, for example `Main/Auto farm`. If you rename a control or its tab, its old value isn't found any more. To keep a value across renames, or when two controls in a tab share a title, give the control a fixed `Flag`:
+
+```lua
+main:AddToggle({ Title = "Auto farm", Flag = "autoFarm", Callback = function(on) end })
+```
+
+| | |
+| --- | --- |
+| `ui:SetConfig(name)` | Turns saving on with `name.json` (or `name` as is if it already ends in `.json`) and loads what's in it |
+| `ui:SaveConfig()` | Writes the file right now |
+| `ui.ConfigFile` | The file in use, `nil` until `SetConfig` is called |
+| `Flag` option | Fixed name for a control in the file, instead of `Tab/Title` |
+
+Saving needs `writefile` and `readfile`. Without them the menu works normally and just doesn't save.
+
 ## Notifications
 
 ```lua
@@ -523,7 +555,7 @@ Escape (`0x1B`) can't be the menu key, because it's what cancels a keybind box.
 
 ## Recipes
 
-**Saving settings between sessions** (needs `writefile` / `readfile`):
+**Saving extra values of your own** next to the menu's (for things that aren't controls). For the controls themselves, `ui:SetConfig` already does this; see [Saving settings](#saving-settings). Needs `writefile` / `readfile`:
 
 ```lua
 local FILE = "myscript_settings.json"

@@ -42,7 +42,7 @@ local function copyStyle(t,where)
  end
  return out
 end
-local app={Version="1.0.4",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
+local app={Version="1.0.5",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
 env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -203,8 +203,26 @@ function app:Notify(options,message)
  if #notices>4 then local old=table.remove(notices,1);animations[old.id.."y"]=nil end
  return n.id
 end
+-- Config: saves every toggle, slider, dropdown and keybind (plus theme and menu key) to a file
+local config=nil
+local allTabs={}
+local SAVED={toggle=true,slider=true,dropdown=true,keybind=true}
+local function remember(key,value)
+ if config and key then config.values[key]=value;config.dirty=true;config.at=tick()+.5 end
+end
+local function writeConfig()
+ if not config then return end
+ config.dirty=false
+ local ok,text=pcall(function() return game:GetService("HttpService"):JSONEncode(config.values) end)
+ if ok and type(writefile)=="function" then pcall(writefile,config.file,text) end
+end
+local function applySaved(c)
+ if not config or not c.ConfigKey or not SAVED[c.Kind] or (c.Kind=="keybind" and not c.Custom) then return end
+ local v=config.values[c.ConfigKey]
+ if v~=nil and v~=c.Value then pcall(c.SetValue,c,v) end
+end
 function app:SetTheme(name)
- for i,t in ipairs(themes) do if string.lower(t.Name)==string.lower(tostring(name)) then targetTheme=i;self.Theme=t.Name;return true end end
+ for i,t in ipairs(themes) do if string.lower(t.Name)==string.lower(tostring(name)) then targetTheme=i;self.Theme=t.Name;remember("_theme",t.Name);return true end end
  return false
 end
 function app:SetLayout(layout)
@@ -221,6 +239,20 @@ function app:SetLayout(layout)
  end
  return self
 end
+function app:SetConfig(name)
+ assert(type(name)=="string" and name~="","SetConfig needs a file name")
+ local file=string.find(name,"%.json$") and name or name..".json"
+ config={file=file,values={},dirty=false,at=0}
+ local ok,data=pcall(function() return game:GetService("HttpService"):JSONDecode(readfile(file)) end)
+ if ok and type(data)=="table" then config.values=data end
+ local saved=config.values
+ if saved._theme then self:SetTheme(saved._theme) end
+ if type(saved._menuKey)=="number" then pcall(self.SetKeybind,self,saved._menuKey) end
+ for _,tab in ipairs(allTabs) do for _,c in ipairs(tab.Controls) do applySaved(c) end end
+ self.ConfigFile=file
+ return self
+end
+function app:SaveConfig() writeConfig() end
 local function keyName(k)
  local names={[0xA0]="Left Shift",[0xA1]="Right Shift",[0xA2]="Left Ctrl",[0xA3]="Right Ctrl",[0xA4]="Left Alt",[0xA5]="Right Alt",[0x2D]="Insert",[0x24]="Home",[0x23]="End",[0x20]="Space",[0x09]="Tab",[0x0D]="Enter",[0x2E]="Delete"}
  if names[k] then return names[k] end
@@ -230,12 +262,13 @@ local function keyName(k)
 end
 function app:SetKeybind(vk)
  assert(type(vk)=="number" and vk>=8 and vk<=254 and vk==math.floor(vk) and vk~=27,"Use a VK key code (8..254), except Escape")
- self.Keybind=vk;previousKey=iskeypressed(vk)
+ self.Keybind=vk;previousKey=iskeypressed(vk);remember("_menuKey",vk)
 end
 function app:Destroy()
  if not self.Alive then return end
  self.Alive=false
  takeInput(false)
+ if config and config.dirty then writeConfig() end
  if connection then connection:Disconnect() end
  if introSound then pcall(function() introSound:Destroy() end);introSound=nil end
  for _,e in pairs(pool) do pcall(function() e.d:Remove() end) end
@@ -276,6 +309,7 @@ function Control:SetValue(value,silent)
   assert(found,"Dropdown value must be one of its Options")
  end
  local changed=self.Value~=value;self.Value=value
+ if changed and SAVED[self.Kind] and not (self.Kind=="keybind" and not self.Custom) then remember(self.ConfigKey,value) end
  if changed and not silent then fire(self.Callback,value) end
  return self
 end
@@ -292,6 +326,8 @@ function Tab:_add(kind,o)
  if kind=="toggle" then c.Value=not not o.Default elseif kind=="slider" then c:SetValue(o.Default or c.Min,true)
  elseif kind=="dropdown" then c:SetValue(o.Default or c.Options[1],true) end
  animations[c.Id.."appear"]=0
+ c.ConfigKey=o.Flag or (self.Title.."/"..tostring(o.Title or kind))
+ applySaved(c)
  self.Controls[#self.Controls+1]=c;return c
 end
 function Tab:AddButton(o) return self:_add("button",o) end
@@ -319,6 +355,7 @@ end
 function app:AddTab(o)
  if type(o)=="string" then o={Title=o} end
  o=o or {};local tab=setmetatable({Id=uid(),Title=short(o.Title or "Tab",18),Icon=o.Icon or "script",Controls={},Page=1,Style=copyStyle(o.Style,"Style")},Tab)
+ allTabs[#allTabs+1]=tab
  animations[tab.Id.."appear"]=0
  self.Tabs[#self.Tabs+1]=tab;if not selected then selected=tab end;return tab
 end
@@ -649,6 +686,7 @@ local function renderIntro(now,vp)
 end
 local function render()
  local now=tick();dt=clamp(now-last,0,0.1);last=now;frame=frame+1
+ if config and config.dirty and now>=config.at then writeConfig() end
  if not app.ReducedMotion then motionClock=motionClock+dt end
  active=type(isrbxactive)~="function" or isrbxactive()
  down=active and ismouse1pressed() and not (app.InputGuard and app.InputGuard());click=down and not previousDown;previousDown=down
