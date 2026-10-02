@@ -25,10 +25,13 @@ local function short(s,n)
  return n<4 and s:sub(1,n) or s:sub(1,n-3).."..."
 end
 local layoutDefaults={Height=65,Gap=12,Width=1,Padding=13,Corner=12,Border=1,IconSize=31,TitleSize=14,DescriptionSize=11,ShowDescription=true,
- ToggleWidth=46,ToggleHeight=24,SliderWidth=156,BoxWidth=165,BoxHeight=35,ButtonWidth=94,ButtonHeight=34}
+ ToggleWidth=46,ToggleHeight=24,SliderWidth=156,BoxWidth=165,BoxHeight=35,ButtonWidth=94,ButtonHeight=34,Checkbox=false,
+ RowHeight=30,RowGap=6,RowTextSize=13,IslandPadding=12,IslandCorner=10,IslandBorder=1,IslandOpacity=0.48,HeaderSize=10,HeaderUpper=true,HeaderRule=true}
 local layoutLimits={Height={20,296},Gap={0,60},Width={0.05,1},Padding={0,40},Corner={0,30},Border={0,6},IconSize={0,60},TitleSize={8,30},DescriptionSize={8,24},
- ToggleWidth={20,120},ToggleHeight={10,40},SliderWidth={40,400},BoxWidth={60,400},BoxHeight={14,60},ButtonWidth={30,300},ButtonHeight={14,60}}
-local layoutPresets={Default={},Compact={Height=36,Gap=6,Padding=9,Corner=9,IconSize=22,TitleSize=13,ToggleWidth=34,ToggleHeight=18,SliderWidth=130,BoxWidth=140,BoxHeight=26,ButtonWidth=80,ButtonHeight=26}}
+ ToggleWidth={20,120},ToggleHeight={10,40},SliderWidth={40,400},BoxWidth={60,400},BoxHeight={14,60},ButtonWidth={30,300},ButtonHeight={14,60},
+ RowHeight={16,60},RowGap={0,30},RowTextSize={8,24},IslandPadding={0,40},IslandCorner={0,30},IslandBorder={0,6},IslandOpacity={0,1},HeaderSize={8,24}}
+local layoutPresets={Default={},Compact={Height=36,Gap=6,Padding=9,Corner=9,IconSize=22,TitleSize=13,ToggleWidth=34,ToggleHeight=18,SliderWidth=130,BoxWidth=140,BoxHeight=26,ButtonWidth=80,ButtonHeight=26,
+ RowHeight=24,RowGap=4,RowTextSize=12,IslandPadding=9}}
 local function copyStyle(t,where)
  local out={}
  if t==nil then return out end
@@ -42,7 +45,7 @@ local function copyStyle(t,where)
  end
  return out
 end
-local app={Version="1.0.5b",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
+local app={Version="1.0.6",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
 env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -206,6 +209,12 @@ end
 -- Config: saves every toggle, slider, dropdown and keybind (plus theme and menu key) to a file
 local config=nil
 local allTabs={}
+-- Every control on a tab, including the rows inside its islands
+local function eachControl(tab,fn)
+ for _,c in ipairs(tab.Controls) do
+  if c.Kind=="island" then for _,row in ipairs(c.Controls) do fn(row) end else fn(c) end
+ end
+end
 local SAVED={toggle=true,slider=true,dropdown=true,keybind=true}
 local function remember(key,value)
  if config and key then config.values[key]=value;config.dirty=true;config.at=tick()+.5 end
@@ -248,7 +257,7 @@ function app:SetConfig(name)
  local saved=config.values
  if saved._theme then self:SetTheme(saved._theme) end
  if type(saved._menuKey)=="number" then pcall(self.SetKeybind,self,saved._menuKey) end
- for _,tab in ipairs(allTabs) do for _,c in ipairs(tab.Controls) do applySaved(c) end end
+ for _,tab in ipairs(allTabs) do eachControl(tab,applySaved) end
  self.ConfigFile=file
  return self
 end
@@ -318,7 +327,7 @@ function Tab:_add(kind,o)
  assert(app.Alive,"UI has been destroyed")
  o=o or {};local c=setmetatable({Id=uid(),Kind=kind,Title=short(o.Title or kind,52),Description=short(o.Description or "",68),Callback=o.Callback,Style=copyStyle(o.Style,"Style"),_st={}},Control)
  c.Icon=o.Icon or ({button="bolt",toggle="power",slider="sliders",dropdown="layers",keybind="key",label="spark"})[kind]
- c.ButtonText=short(o.ButtonText or "Run",9);c.Custom=o.Custom
+ c.ButtonText=short(o.ButtonText or "Run",9);c.Custom=o.Custom;c.Suffix=o.Suffix and tostring(o.Suffix) or ""
  c.Min=tonumber(o.Min) or 0;c.Max=tonumber(o.Max) or 100;c.Step=tonumber(o.Step) or 1
  if kind=="slider" then assert(c.Max>c.Min and c.Step>0,"Slider requires Max > Min and Step > 0") end
  c.Options=o.Options or {};if kind=="dropdown" then assert(#c.Options>0,"Dropdown requires Options") end
@@ -326,7 +335,7 @@ function Tab:_add(kind,o)
  if kind=="toggle" then c.Value=not not o.Default elseif kind=="slider" then c:SetValue(o.Default or c.Min,true)
  elseif kind=="dropdown" then c:SetValue(o.Default or c.Options[1],true) end
  animations[c.Id.."appear"]=0
- if o.Save~=false then c.ConfigKey=o.Flag or (self.Title.."/"..tostring(o.Title or kind)) end
+ if o.Save~=false then c.ConfigKey=o.Flag or ((self.KeyPrefix or self.Title).."/"..tostring(o.Title or kind)) end
  applySaved(c)
  self.Controls[#self.Controls+1]=c;return c
 end
@@ -336,16 +345,39 @@ function Tab:AddSlider(o) return self:_add("slider",o) end
 function Tab:AddDropdown(o) return self:_add("dropdown",o) end
 function Tab:AddKeybind(o) o=o or {};o.Custom=true;return self:_add("keybind",o) end
 function Tab:AddLabel(o) if type(o)=="string" then o={Title=o} end;return self:_add("label",o) end
+-- Islands: titled panels that hold compact rows and stack into the tab's columns
+local Island={};Island.__index=Island
+for _,name in ipairs({"_add","AddButton","AddToggle","AddSlider","AddDropdown","AddKeybind","AddLabel","SetStyle"}) do Island[name]=Tab[name] end
+function Island:AddDivider(o)
+ if type(o)=="string" or o==nil then o={Title=o or ""} end
+ o.Save=false;o.Title=o.Title or "";return self:_add("divider",o)
+end
+function Island:SetText(text) self.Title=short(text,40);return self end
+function Island:SetDescription(text) self.Description=short(text,60);return self end
+local function checkColumns(n,what) assert(type(n)=="number" and n==math.floor(n) and n>=1 and n<=4,what.." must be a whole number from 1 to 4") end
+function Tab:SetColumns(n) checkColumns(n,"Columns");self.Columns=n;return self end
+function Tab:AddIsland(o)
+ assert(app.Alive,"UI has been destroyed")
+ if type(o)=="string" then o={Title=o} end
+ o=o or {}
+ if o.Column~=nil then checkColumns(o.Column,"Column") end
+ if o.MinHeight~=nil then assert(type(o.MinHeight)=="number","MinHeight must be a number") end
+ local isl=setmetatable({Id=uid(),Kind="island",Title=short(o.Title or "",40),Description=short(o.Description or "",60),Column=o.Column,MinHeight=o.MinHeight or 0,
+  Controls={},Style=copyStyle(o.Style,"Style"),_st={},KeyPrefix=self.Title..(o.Title and "/"..tostring(o.Title) or "")},Island)
+ animations[isl.Id.."appear"]=0
+ self.Controls[#self.Controls+1]=isl;return isl
+end
 local function replayTab(tab)
  animations.content=0;contentA=0;visitTime=motionClock;popup=nil;slide=nil;capture=nil
- for _,c in ipairs(tab.Controls) do
+ for _,c in ipairs(tab.Controls) do animations[c.Id.."appear"]=0 end
+ eachControl(tab,function(c)
   local id=c.Id
   animations[id.."appear"]=0
   animations[id.."hover"]=0;animations[id.."cardhover"]=0
   animations[id.."press"]=0;animations[id.."rotate"]=0;animations[id.."record"]=0
   if c.Kind=="toggle" then animations[id.."switch"]=0 end
   if c.Kind=="slider" then animations[id.."fill"]=0;animations[id.."number"]=c.Min end
- end
+ end)
 end
 function Tab:Select()
  if selected~=self then selected=self;replayTab(self) end
@@ -354,7 +386,9 @@ function Tab:Select()
 end
 function app:AddTab(o)
  if type(o)=="string" then o={Title=o} end
- o=o or {};local tab=setmetatable({Id=uid(),Title=short(o.Title or "Tab",18),Icon=o.Icon or "script",Controls={},Page=1,Style=copyStyle(o.Style,"Style")},Tab)
+ o=o or {}
+ if o.Columns~=nil then checkColumns(o.Columns,"Columns") end
+ local tab=setmetatable({Id=uid(),Title=short(o.Title or "Tab",18),Icon=o.Icon or "script",Controls={},Page=1,Columns=o.Columns or 2,Style=copyStyle(o.Style,"Style")},Tab)
  allTabs[#allTabs+1]=tab
  animations[tab.Id.."appear"]=0
  self.Tabs[#self.Tabs+1]=tab;if not selected then selected=tab end;return tab
@@ -388,36 +422,151 @@ local function beginCapture(control)
  for k=8,254 do capture.keys[k]=iskeypressed(k) end
 end
 local REF_WIDTH,AREA_HEIGHT,empty=662,296,{}
-local function resolveStyle(c,tab)
+-- Style lookup order: the control, its island, its tab, then ui.Layout
+local function resolveStyle(c,tab,island)
  local st,own,shared=c._st,c.Style or empty,tab.Style or empty
+ local group=island and island.Style or empty
  local layout=type(app.Layout)=="table" and app.Layout or layoutDefaults
  for k,d in pairs(layoutDefaults) do
-  local v=own[k];if v==nil then v=shared[k] end;if v==nil then v=layout[k] end
-  if k=="ShowDescription" then st[k]=v~=false
+  local v=own[k];if v==nil then v=group[k] end
+  -- a row's Width is its share of the island, so the tab's card Width never reaches it
+  if v==nil and not (island and k=="Width") then v=shared[k];if v==nil then v=layout[k] end end
+  if type(d)=="boolean" then if v==nil then v=d end;st[k]=v==true
   else local lim=layoutLimits[k];st[k]=clamp(tonumber(v) or d,lim[1],lim[2]) end
  end
  return st
 end
-local function layoutTab(tab)
- local controls=tab.Controls
- local page,y,first,used,h,gap=1,0,1,0,0,0
- for i=1,#controls+1 do
-  local c=controls[i];local st=c and resolveStyle(c,tab)
-  if i>first and (not c or used+st.Width>1.001) then
-   if y>0 and y+h>AREA_HEIGHT then page=page+1;y=0 end
-   local offset=0
-   for j=first,i-1 do
-    local item=controls[j]
-    item._page,item._y,item._h,item._gap,item._x=page,y,h,gap,offset
-    offset=offset+item._st.Width
-   end
-   y=y+h+gap;first,used,h,gap=i,0,0,0
-  end
-  if c then used=used+st.Width;h=math.max(h,st.Height);gap=math.max(gap,st.Gap) end
+-- Puts items first..last on one line: each gets the line's height and its x offset as a share of the width
+local function placeLine(items,first,last,page,y,h,gap)
+ local offset=0
+ for j=first,last do
+  local item=items[j];local w=item._st.Width
+  item._page,item._y,item._h,item._gap,item._x,item._w=page,y,h,gap,offset,w
+  offset=offset+w
  end
+end
+local function rowHeight(c,st)
+ local kind,ts=c.Kind,st.RowTextSize
+ if kind=="slider" then return ts+24
+ elseif kind=="dropdown" then return ts+6+math.min(st.BoxHeight,st.RowHeight)
+ elseif kind=="divider" then return ts+8 end
+ return st.RowHeight
+end
+local function measureIsland(isl,tab)
+ local st=resolveStyle(isl,tab)
+ local rows,gap=isl.Controls,st.RowGap
+ local y,first,used,h=0,1,0,0
+ for i=1,#rows+1 do
+  local c=rows[i];local rs=c and resolveStyle(c,tab,isl)
+  if i>first and (not c or used+rs.Width>1.001) then placeLine(rows,first,i-1,1,y,h,gap);y=y+h+gap;first,used,h=i,0,0 end
+  if c then used=used+rs.Width;h=math.max(h,rowHeight(c,rs)) end
+ end
+ if #rows>0 then y=y-gap end
+ local hs=st.HeaderSize
+ local head=(isl.Title~="" and hs+4 or 0)+(isl.Description~="" and hs+3 or 0)
+ isl._head=head>0 and head+4 or 0
+ isl._h=math.max(isl._head+st.IslandPadding*2+y,isl.MinHeight)
+ if isl._h>AREA_HEIGHT and not isl._warned then isl._warned=true;warn("JDUI: island '"..isl.Title.."' is taller than a page, its bottom rows will not fit") end
+end
+local function layoutTab(tab)
+ local controls,cols=tab.Controls,tab.Columns
+ local page,y,first,used,h,gap=1,0,1,0,0,0
+ local function flush(last)
+  if last>=first then
+   if y>0 and y+h>AREA_HEIGHT then page=page+1;y=0 end
+   placeLine(controls,first,last,page,y,h,gap)
+   y=y+h+gap
+  end
+  first,used,h,gap=last+1,0,0,0
+ end
+ local i=1
+ while i<=#controls do
+  local c=controls[i]
+  if c.Kind=="island" then
+   flush(i-1)
+   -- A run of islands: each goes in its Column (or the shortest one); one that doesn't fit moves the rest to the next page
+   local heights,top={},y
+   for k=1,cols do heights[k]=0 end
+   while controls[i] and controls[i].Kind=="island" do
+    local isl=controls[i];measureIsland(isl,tab)
+    local k=isl.Column and math.min(isl.Column,cols)
+    if not k then k=1;for q=2,cols do if heights[q]<heights[k] then k=q end end end
+    if top+heights[k]>0 and top+heights[k]+isl._h>AREA_HEIGHT then
+     page=page+1;top=0;for q=1,cols do heights[q]=0 end
+    end
+    local g=isl._st.Gap
+    isl._page,isl._y,isl._gap,isl._x,isl._w=page,top+heights[k],g,(k-1)/cols,1/cols
+    heights[k]=heights[k]+isl._h+g
+    i=i+1
+   end
+   local tallest=0;for k=1,cols do tallest=math.max(tallest,heights[k]) end
+   y=top+tallest;first=i
+  else
+   local st=resolveStyle(c,tab)
+   if i>first and used+st.Width>1.001 then flush(i-1) end
+   used=used+st.Width;h=math.max(h,st.Height);gap=math.max(gap,st.Gap)
+   i=i+1
+  end
+ end
+ flush(#controls)
  return page
 end
 local function center(total,size) return math.floor((total-size)/2+.5) end
+local function textWidth(s,size) return #s*size*.6 end
+-- Widgets shared by cards and island rows
+local function drawButton(c,id,bx,by,bw,bh,ca)
+ local over=hit(bx,by,bw,bh)
+ local pulse=ease(id.."press",0,9)
+ box(id.."button",bx+pulse*2,by+pulse,bw-pulse*4,bh-pulse*2,accent,(0.14+pulse*0.25+ease(id.."hover",over and 0.13 or 0))*ca,math.min(9,bh/2),30)
+ return over
+end
+local function pressButton(c,id,over)
+ if over and click then click=false;animations[id.."press"]=1;fire(c.Callback) end
+end
+local function drawToggle(c,id,tx,ty,tw,th,ca,check,rowHit)
+ local v=ease(id.."switch",c.Value and 1 or 0)
+ if check then
+  local inset=math.max(3,math.floor(th/4))
+  box(id.."switch",tx,ty,th,th,mix(muted,accent,v),(0.16+v*0.3)*ca,math.min(6,th/3),30)
+  box(id.."knob",tx+inset,ty+inset,th-inset*2,th-inset*2,accent,v*ca,math.min(4,th/4),31)
+ else
+  local knob=math.max(4,math.min(th-8,tw-12))
+  local ky=ty+(th-knob)/2
+  glow(id.."toggleGlow",tx+4,ky,tw-8,knob,v*ca,29)
+  box(id.."switch",tx,ty,tw,th,mix(muted,accent,v),(0.16+v*0.5)*ca,th/2,30)
+  box(id.."knob",tx+4+(tw-8-knob)*v,ky,knob,knob,ink,ca,knob/2,31)
+ end
+ if (rowHit or hit(tx-15,ty-9,tw+19,th+18)) and click then click=false;c:SetValue(not c.Value) end
+end
+local function drawSelect(c,id,bx,by,bw,bh,ca)
+ local over=hit(bx,by,bw,bh)
+ box(id.."select",bx,by,bw,bh,ink,(0.055+ease(id.."hover",over and 0.065 or 0))*ca,math.min(8,bh/2),30)
+ label(id.."value",short(c.Value,(bw-35)/7.6),bx+13,by+bh/2-7.5,12,ink,ca,true)
+ local rotate=ease(id.."rotate",popup and popup.control==c and not popup.Closing and 1 or 0)
+ local chevronY=by+bh/2
+ line(id.."chevron1",bx+bw-20,chevronY-2.5+5*rotate,bx+bw-15,chevronY+2.5-5*rotate,accent,ca)
+ line(id.."chevron2",bx+bw-15,chevronY+2.5-5*rotate,bx+bw-10,chevronY-2.5+5*rotate,accent,ca)
+ if over and click then click=false;popup={control=c,x=bx,y=math.min(by+bh+3,H-186),w=math.max(120,bw),offset=0};animations.dropdown=0 end
+end
+local function drawKey(c,id,bx,by,bw,bh,ca)
+ local mine=c.Custom and c or nil
+ local recording=capture and capture.control==mine
+ local over=hit(bx,by,bw,bh)
+ box(id.."key",bx,by,bw,bh,accent,(0.07+ease(id.."record",recording and 0.16 or over and 0.06 or 0))*ca,math.min(8,bh/2),30)
+ icon(id.."keyicon","key",bx+9,by+bh/2-10.5,accent,ca)
+ label(id.."value",short(recording and "Press a key..." or (mine and (c.Value and keyName(c.Value) or "None") or keyName(app.Keybind)),(bw-46)/6.5),bx+38,by+bh/2-7.5,12,ink,ca,true)
+ if over and click then click=false;beginCapture(mine) end
+end
+local function sliderNumber(n) return (string.format("%.2f",n):gsub("%.?0+$","")) end
+local function drawSlider(c,id,sx,trackY,sw,ca)
+ if hit(sx-6,trackY-13,sw+12,28) and click then slide=c;click=false end
+ if slide==c and down and active and not popup and not capture then c:SetValue(c.Min+clamp((mx-x-sx*S)/(sw*S),0,1)*(c.Max-c.Min)) end
+ local t=ease(id.."fill",(c.Value-c.Min)/(c.Max-c.Min))
+ box(id.."track",sx,trackY,sw,3,ink,0.14*ca,2,30)
+ box(id.."fill",sx,trackY,sw*t,3,accent,ca,2,31)
+ glow(id.."sliderGlow",sx+sw*t-3,trackY-2,7,7,ca,30)
+ box(id.."thumb",sx+sw*t-5,trackY-4,11,11,ink,ca,6,32)
+end
 local function renderControl(c,px,py,width,height,refWidth,index)
  local id,st,kind=c.Id,c._st,c.Kind
  local enter=ease(id.."appear",(app.ReducedMotion or motionClock-visitTime>(index-1)*0.045) and 1 or 0,13)
@@ -452,54 +601,103 @@ local function renderControl(c,px,py,width,height,refWidth,index)
  if kind=="button" then
   local bw,bh=st.ButtonWidth,math.min(st.ButtonHeight,height-4)
   local bx,by=right-pad-4-bw,py+center(height,bh)
-  local over=hit(bx,by,bw,bh)
-  local pulse=ease(id.."press",0,9)
-  box(id.."button",bx+pulse*2,by+pulse,bw-pulse*4,bh-pulse*2,accent,(0.14+pulse*0.25+ease(id.."hover",over and 0.13 or 0))*contentA,math.min(9,bh/2),30)
+  local over=drawButton(c,id,bx,by,bw,bh,contentA)
   label(id.."run",c.ButtonText,bx+17,by+bh/2-8,12,ink,contentA,true);icon(id.."arrow","right",bx+bw-27,by+bh/2-10,accent,contentA)
-  if over and click then click=false;animations[id.."press"]=1;fire(c.Callback) end
+  pressButton(c,id,over)
  elseif kind=="toggle" then
-  local tw,th=st.ToggleWidth,math.min(st.ToggleHeight,height-4)
-  local tx,ty=right-pad-7-tw,py+center(height,th)
-  local knob=math.max(4,math.min(th-8,tw-12))
-  local ky=ty+(th-knob)/2
-  local v=ease(id.."switch",c.Value and 1 or 0)
-  glow(id.."toggleGlow",tx+4,ky,tw-8,knob,v*contentA,29)
-  box(id.."switch",tx,ty,tw,th,mix(muted,accent,v),(0.16+v*0.5)*contentA,th/2,30)
-  box(id.."knob",tx+4+(tw-8-knob)*v,ky,knob,knob,ink,contentA,knob/2,31)
-  if hit(tx-15,ty-9,tw+19,th+18) and click then click=false;c:SetValue(not c.Value) end
+  local th=math.min(st.ToggleHeight,height-4)
+  local tw=st.Checkbox and th or st.ToggleWidth
+  drawToggle(c,id,right-pad-7-tw,py+center(height,th),tw,th,contentA,st.Checkbox)
  elseif kind=="dropdown" then
   local bw,bh=st.BoxWidth,math.min(st.BoxHeight,height-4)
-  local bx,by=right-pad-4-bw,py+center(height,bh)
-  local over=hit(bx,by,bw,bh)
-  box(id.."select",bx,by,bw,bh,ink,(0.055+ease(id.."hover",over and 0.065 or 0))*contentA,math.min(8,bh/2),30)
-  label(id.."value",short(c.Value,(bw-35)/7.6),bx+13,by+bh/2-7.5,12,ink,contentA,true)
-  local rotate=ease(id.."rotate",popup and popup.control==c and not popup.Closing and 1 or 0)
-  local chevronY=by+bh/2
-  line(id.."chevron1",bx+bw-20,chevronY-2.5+5*rotate,bx+bw-15,chevronY+2.5-5*rotate,accent,contentA)
-  line(id.."chevron2",bx+bw-15,chevronY+2.5-5*rotate,bx+bw-10,chevronY-2.5+5*rotate,accent,contentA)
-  if over and click then click=false;popup={control=c,x=bx,y=math.min(by+bh+3,H-186),w=math.max(120,bw),offset=0};animations.dropdown=0 end
+  drawSelect(c,id,right-pad-4-bw,py+center(height,bh),bw,bh,contentA)
  elseif kind=="keybind" then
   local bw,bh=st.BoxWidth,math.min(st.BoxHeight,height-4)
-  local bx,by=right-pad-4-bw,py+center(height,bh)
-  local mine=c.Custom and c or nil
-  local recording=capture and capture.control==mine
-  local over=hit(bx,by,bw,bh)
-  box(id.."key",bx,by,bw,bh,accent,(0.07+ease(id.."record",recording and 0.16 or over and 0.06 or 0))*contentA,math.min(8,bh/2),30)
-  icon(id.."keyicon","key",bx+9,by+bh/2-10.5,accent,contentA)
-  label(id.."value",recording and "Press a key..." or (mine and (c.Value and keyName(c.Value) or "None") or keyName(app.Keybind)),bx+38,by+bh/2-7.5,12,ink,contentA,true)
-  if over and click then click=false;beginCapture(mine) end
+  drawKey(c,id,right-pad-4-bw,py+center(height,bh),bw,bh,contentA)
  elseif kind=="slider" then
   local sw=st.SliderWidth
   local sx=right-pad-8-sw
   local trackY=stacked and mid+6.5 or mid-1.5
-  label(id.."value",string.format("%.2f",ease(id.."number",c.Value,18)):gsub("%.?0+$",""),stacked and sx+sw-60 or sx-48,stacked and mid-24.5 or mid-7,11,accent,contentA,true)
-  if hit(sx-6,trackY-13,sw+12,28) and click then slide=c;click=false end
-  if slide==c and down and active and not popup and not capture then c:SetValue(c.Min+clamp((mx-x-sx*S)/(sw*S),0,1)*(c.Max-c.Min)) end
-  local t=ease(id.."fill",(c.Value-c.Min)/(c.Max-c.Min))
-  box(id.."track",sx,trackY,sw,3,ink,0.14*contentA,2,30)
-  box(id.."fill",sx,trackY,sw*t,3,accent,contentA,2,31)
-  glow(id.."sliderGlow",sx+sw*t-3,trackY-2,7,7,contentA,30)
-  box(id.."thumb",sx+sw*t-5,trackY-4,11,11,ink,contentA,6,32)
+  label(id.."value",sliderNumber(ease(id.."number",c.Value,18))..c.Suffix,stacked and sx+sw-60 or sx-48,stacked and mid-24.5 or mid-7,11,accent,contentA,true)
+  drawSlider(c,id,sx,trackY,sw,contentA)
+ end
+end
+-- One row inside an island: title on the left, its widget on the right (sliders and dropdowns go under the title)
+local function renderRow(c,rx,ry,rw,rh,rref,ca)
+ local id,st,kind=c.Id,c._st,c.Kind
+ local ts=st.RowTextSize
+ local hovered=hit(rx,ry,rw,rh)
+ local hover=ease(id.."cardhover",hovered and 1 or 0,14)
+ if kind=="divider" then
+  local mid=ry+math.floor(rh/2)
+  if c.Title~="" then
+   local size=math.max(8,ts-2);local tw=textWidth(c.Title,size);local side=(rw-tw)/2-8
+   label(id.."title",c.Title,rx+rw/2-tw/2,mid-size/2-1,size,muted,ca*.8)
+   box(id.."ruleL",rx,mid,side,1,ink,.08*ca,0,24)
+   box(id.."ruleR",rx+rw-side,mid,side,1,ink,.08*ca,0,24)
+  else box(id.."ruleL",rx,mid,rw,1,ink,.08*ca,0,24) end
+  return
+ end
+ if kind=="button" then
+  local bh=math.min(st.ButtonHeight,rh)
+  local by=ry+center(rh,bh)
+  local over=drawButton(c,id,rx,by,rw,bh,ca)
+  local size=math.max(8,ts-1);local text=short(c.Title,(rref-16)/(size*.62))
+  label(id.."title",text,rx+rw/2-textWidth(text,size)/2,by+bh/2-size/2-1,size,ink,ca,true)
+  pressButton(c,id,over)
+  return
+ end
+ if kind~="label" then box(id.."row",rx-5,ry-2,rw+10,rh+4,ink,hover*.04*ca,6,24) end
+ local stacked=kind=="slider" or kind=="dropdown"
+ local th=math.min(st.ToggleHeight,rh-4);local tw=st.Checkbox and th or st.ToggleWidth
+ local kh=math.min(st.BoxHeight,rh-4);local kw=math.min(st.BoxWidth,math.max(90,rw*.45))
+ local reserve=kind=="toggle" and tw+8 or kind=="keybind" and math.min(st.BoxWidth,math.max(90,rref*.45))+8 or kind=="slider" and 56 or 0
+ label(id.."title",short(c.Title,(rref-reserve)/(ts*.65)),rx+hover*2,stacked and ry or ry+rh/2-ts/2-1,ts,kind=="label" and muted or ink,ca)
+ if kind=="toggle" then
+  drawToggle(c,id,rx+rw-tw,ry+center(rh,th),tw,th,ca,st.Checkbox,hovered)
+ elseif kind=="keybind" then
+  drawKey(c,id,rx+rw-kw,ry+center(rh,kh),kw,kh,ca)
+ elseif kind=="dropdown" then
+  local by=ry+ts+6
+  drawSelect(c,id,rx,by,rw,ry+rh-by,ca)
+ elseif kind=="slider" then
+  local size=math.max(8,ts-2)
+  local text=sliderNumber(ease(id.."number",c.Value,18))..c.Suffix
+  local widest=math.max(#sliderNumber(c.Min),#sliderNumber(c.Max))+#c.Suffix
+  local vw=math.max(30,widest*size*.6+14)
+  box(id.."valuebox",rx+rw-vw,ry-1,vw,size+7,ink,.06*ca,5,30)
+  label(id.."value",text,rx+rw-vw/2-textWidth(text,size)/2,ry+2,size,accent,ca,true)
+  drawSlider(c,id,rx+5,ry+rh-8,rw-10,ca)
+ end
+end
+-- An island: optional header (title, rule, description) above a panel of rows
+local function renderIsland(isl,px,py,width,height,refWidth,index)
+ local id,st=isl.Id,isl._st
+ local enter=ease(id.."appear",(app.ReducedMotion or motionClock-visitTime>(index-1)*0.045) and 1 or 0,13)
+ local ca=contentA*enter
+ py=py+(1-enter)*10
+ local hs=st.HeaderSize
+ if isl.Title~="" then
+  local title=short(st.HeaderUpper and string.upper(isl.Title) or isl.Title,refWidth/(hs*.7))
+  label(id.."title",title,px+2,py,hs,accent,ca,true)
+  if st.HeaderRule then
+   local lx=px+2+textWidth(title,hs)+10
+   box(id.."rule",lx,py+math.floor(hs/2),px+width-lx,1,ink,.08*ca,0,22)
+  end
+ end
+ if isl.Description~="" then
+  local ds=math.max(8,hs-1)
+  label(id.."description",short(isl.Description,refWidth/(ds*.6)),px+2,py+(isl.Title~="" and hs+4 or 0),ds,muted,ca*.85)
+ end
+ local by,bh=py+isl._head,height-isl._head
+ local border,corner=st.IslandBorder,st.IslandCorner
+ if border>0 then box(id.."border",px,by,width,bh,ink,.065*ca,corner,21) end
+ box(id.."card",px+border,by+border,width-border*2,bh-border*2,mix(tint,white,.035),st.IslandOpacity*ca,math.max(0,corner-border),22)
+ local pad,gap=st.IslandPadding,st.RowGap
+ local iw,riw=width-pad*2,refWidth-pad*2
+ for _,c in ipairs(isl.Controls) do
+  renderRow(c,px+pad+c._x*(iw+gap),by+pad+c._y,c._w*(iw+gap)-gap,c._h,c._w*(riw+gap)-gap,ca)
+  if not app.Alive then return end
  end
 end
 local function renderPopup()
@@ -810,8 +1008,9 @@ local function render()
    for _,c in ipairs(selected.Controls) do
     if c._page==selected.Page then
      index=index+1
-     local gap,width=c._gap,c._st.Width
-     renderControl(c,contentLeft+c._x*(fullWidth+gap),99+c._y,width*(fullWidth+gap)-gap,c._h,width*(REF_WIDTH+gap)-gap,index)
+     local gap,width=c._gap,c._w
+     local draw=c.Kind=="island" and renderIsland or renderControl
+     draw(c,contentLeft+c._x*(fullWidth+gap),99+c._y,width*(fullWidth+gap)-gap,c._h,width*(REF_WIDTH+gap)-gap,index)
      if not app.Alive then return end
     end
    end

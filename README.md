@@ -8,6 +8,7 @@ The menu used by my Grand Blue and Find a Needle scripts, on its own so it can b
 - [Tabs](#tabs)
 - [Controls](#controls)
 - [Changing controls later](#changing-controls-later)
+- [Islands](#islands)
 - [Sizes and layout](#sizes-and-layout)
 - [Saving settings](#saving-settings)
 - [Notifications](#notifications)
@@ -187,6 +188,7 @@ local s = tab:AddSlider({ Title = "Speed", Min = 0, Max = 100, Step = 1, Default
 | `Max` | `100` | Must be bigger than `Min` |
 | `Step` | `1` | Values snap to this. Use `0.1` or `0.05` for decimals |
 | `Default` | `Min` | |
+| `Suffix` | none | Text shown after the value, e.g. `" hz"` shows `30 hz`. Only changes what's shown, the value stays a number |
 
 Click or drag along the track. The value shows above it with up to 2 decimals (trailing zeros dropped, so `50` not `50.00`). Values from dragging or `:SetValue` are always snapped to `Step` and kept between `Min` and `Max`, and the callback only runs when the snapped value changes, so dragging a slider with `Step = 5` calls it once per step, not every frame.
 
@@ -272,6 +274,137 @@ end
 
 **Showing a control only sometimes.** Remove it as above, and add it back with `table.insert(tab.Controls, position, control)` when you need it again. The control keeps its value and callback in between.
 
+## Islands
+
+An island is a titled panel that holds a group of slim rows. Islands split the page into columns (two by default, so two islands sit side by side down the middle), which fits a lot more on one page than full cards.
+
+```lua
+local players = ui:AddTab({ Title = "Players", Icon = "home" })
+
+local list = players:AddIsland({ Title = "Player list", Description = "everyone in the server", Style = { Checkbox = true } })
+list:AddToggle({ Title = "Highlight friends", Default = true })
+list:AddToggle({ Title = "Highlight enemies" })
+list:AddDropdown({ Title = "Sort by", Options = { "Distance", "Name", "Level" } })
+list:AddSlider({ Title = "List rows", Min = 1, Max = 30, Default = 10 })
+list:AddDivider("Actions")
+list:AddButton({ Title = "Refresh list", Style = { Width = 0.5 }, Callback = function() end })
+list:AddButton({ Title = "Copy IDs", Style = { Width = 0.5 }, Callback = function() end })
+
+local tracking = players:AddIsland({ Title = "Tracking", Style = { Checkbox = true } })
+tracking:AddKeybind({ Title = "Track nearest", Default = 0x59 })
+tracking:AddToggle({ Title = "Off screen arrows", Default = true })
+tracking:AddSlider({ Title = "Update rate", Min = 1, Max = 60, Default = 30, Suffix = " hz" })
+tracking:AddDivider("Filters")
+tracking:AddToggle({ Title = "Ignore teammates", Default = true })
+```
+
+### Island options
+
+`tab:AddIsland(options)` returns the island. `tab:AddIsland("Title")` works too.
+
+| Option | Default | |
+| --- | --- | --- |
+| `Title` | none | Shown above the panel in the accent colour, in capitals, with a line running to the right edge. Up to 40 characters. Leave it out for a panel with no header |
+| `Description` | none | Smaller grey line under the title. Up to 60 characters |
+| `Column` | the shortest | Which column the island goes in (1 is the left). Bigger than the tab's column count means the last column |
+| `MinHeight` | none | The island is at least this tall (header included), even with few rows. Handy for making two islands line up at the bottom |
+| `Style` | | Style for the island and every row in it, see [Island style keys](#island-style-keys) |
+
+### Rows
+
+An island has the same `Add...` functions as a tab, with the same options, plus `AddDivider`. Rows are drawn without a card or icon:
+
+| Row | Looks like |
+| --- | --- |
+| `AddToggle` | Title on the left, switch (or checkbox with `Checkbox = true`) on the right. Clicking anywhere on the row flips it |
+| `AddSlider` | Title with the value in a small box on the right, track the full width underneath |
+| `AddDropdown` | Title, with the box the full width underneath |
+| `AddKeybind` | Title on the left, key box on the right |
+| `AddButton` | One button the full width of the row, with the `Title` as its text |
+| `AddLabel` | Grey text |
+| `AddDivider("Actions")` | A thin line with the text in the middle. `AddDivider()` is just the line |
+
+Descriptions and icons are not shown on rows. Everything else works the same as on a tab: callbacks, `:SetValue`, `:SetText`, `:SetStyle`, `Save = false`, `Flag`.
+
+**Rows side by side.** A row's `Width` is its share of the island, so `Style = { Width = 0.5 }` puts two buttons next to each other, like Refresh list and Copy IDs above. A tab's `Width` never reaches rows, so a half width tab doesn't squash its islands.
+
+**Saving.** Island rows are saved like any other control, under `Tab/Island/Title` (for example `Players/Tracking/Ignore teammates`), so two islands can each have an "Enabled" toggle. `Flag` still overrides the name.
+
+### Columns
+
+```lua
+local world = ui:AddTab({ Title = "World", Columns = 3 })
+world:SetColumns(2) -- change it later
+```
+
+`Columns` is a whole number from 1 to 4 (default 2). Each island goes in the column that's shortest so far, unless it has a `Column`, so islands of different heights pack together instead of leaving gaps. Islands in the same column are stacked with the tab's `Gap` between them, and the space between columns is the same `Gap`.
+
+Islands and normal cards can share a tab. Cards added before the islands sit above them, cards added after sit below the tallest column.
+
+**Pages.** When the next island doesn't fit under its column, it and every island after it go to the next page. A single island taller than the whole page (296) can't be split, so its bottom rows run off the page and JDUI warns once in the console. Move some rows to another island if you see that warning.
+
+### Changing islands later
+
+| | |
+| --- | --- |
+| `island:SetText(text)` | Changes the title |
+| `island:SetDescription(text)` | Changes the description |
+| `island:SetStyle(style)` | Changes the island's style |
+| `island.Column`, `island.MinHeight` | Can be set directly |
+| `island.Controls` | The rows, in order. Remove or insert rows the same way as on a tab |
+
+To remove a whole island, take it out of `tab.Controls` like any control.
+
+### Island style keys
+
+These keys work in every style table: `ui:SetLayout`, a tab's `Style`, an island's `Style` and a row's `Style`. For each key JDUI checks the row first, then its island, then the tab, then the menu layout. So `ui:SetLayout({ Checkbox = true })` turns every toggle in the menu into a checkbox, and `island:SetStyle({ RowHeight = 26 })` makes just one island tighter.
+
+| Key | Default | Compact | Allowed | What it changes |
+| --- | --- | --- | --- | --- |
+| `RowHeight` | `30` | `24` | 16 to 60 | Height of a row. Sliders are `RowTextSize + 24` tall, and dropdowns add the box under the title |
+| `RowGap` | `6` | `4` | 0 to 30 | Space between rows, and between rows side by side |
+| `RowTextSize` | `13` | `12` | 8 to 24 | Row title size. Dividers and slider values use 2 less |
+| `IslandPadding` | `12` | `9` | 0 to 40 | Space between the panel's edge and its rows |
+| `IslandCorner` | `10` | `10` | 0 to 30 | How round the panel corners are |
+| `IslandBorder` | `1` | `1` | 0 to 6 | Panel border thickness. `0` removes it |
+| `IslandOpacity` | `0.48` | `0.48` | 0 to 1 | How solid the panel background is. `0` leaves just the border |
+| `HeaderSize` | `10` | `10` | 8 to 24 | Title text size. The description uses 1 less |
+| `HeaderUpper` | `true` | `true` | `true` / `false` | `false` keeps the title as you wrote it instead of capitals |
+| `HeaderRule` | `true` | `true` | `true` / `false` | `false` hides the line next to the title |
+| `Checkbox` | `false` | `false` | `true` / `false` | Toggles draw as a square checkbox instead of a switch. Works on normal cards too |
+
+Rows also use `ToggleWidth`, `ToggleHeight`, `BoxWidth` (keybind box, at most about half the row), `BoxHeight` and `ButtonHeight` from the [main style keys](#all-style-keys). Like the other sizes, switches and boxes never grow taller than the row.
+
+### Island examples
+
+**Three slim columns.**
+
+```lua
+ui:SetLayout("Compact")
+local world = ui:AddTab({ Title = "World", Columns = 3 })
+local light = world:AddIsland("Lighting")
+light:AddToggle({ Title = "Fullbright" })
+light:AddSlider({ Title = "Time", Min = 0, Max = 24, Suffix = "h" })
+local cam = world:AddIsland("Camera")
+cam:AddSlider({ Title = "FOV", Min = 30, Max = 120, Default = 70 })
+local misc = world:AddIsland("Misc")
+misc:AddButton({ Title = "Rejoin" })
+```
+
+**Plain header in normal case, no line.**
+
+```lua
+tab:AddIsland({ Title = "Camera", Style = { HeaderUpper = false, HeaderRule = false, HeaderSize = 13 } })
+```
+
+**Borderless panels that blend into the menu.**
+
+```lua
+ui:SetLayout({ IslandBorder = 0, IslandOpacity = 0.25, IslandCorner = 6 })
+```
+
+**One wide island on top, two below.** Islands are always one column wide, so for a full width group use a tab with `Columns = 1` or put normal cards above the islands.
+
 ## Sizes and layout
 
 All controls start at the sizes the menu always had. You can make them smaller (or bigger), change the borders, padding and corners, and put several controls side by side in one row.
@@ -317,6 +450,9 @@ Sizes are in menu pixels. The menu is 800 by 450 and scales down on small screen
 | `BoxHeight` | `35` | `26` | 14 to 60 | Dropdown and keybind box height |
 | `ButtonWidth` | `94` | `80` | 30 to 300 | Button width |
 | `ButtonHeight` | `34` | `26` | 14 to 60 | Button height |
+| `Checkbox` | `false` | `false` | `true` / `false` | Toggles draw as a square checkbox instead of a switch |
+
+Islands have their own keys (row height, panel padding, header look and more), listed in [Island style keys](#island-style-keys).
 
 The current menu values are in `ui.Layout` (for example `ui.Layout.Height`).
 
@@ -638,6 +774,7 @@ end
 
 - Text is cut off with `...` when it doesn't fit its card. Titles are stored up to 52 characters and descriptions up to 68. At the default size a full width label shows about that much (52 and 66), and other controls show less depending on how wide their switch, box or slider is. Tab names are cut at 18.
 - As many rows per page as fit in 296 pixels (4 at the default size), and 5 tabs visible at a time. The rest are reached with the arrows.
+- An island can't be split across pages, so keep each one under 296 pixels tall (about 7 toggle rows at the default row size). Up to 4 columns.
 - Only one JDUI menu can be open at a time. Loading a second one closes the first.
 
 ## Executor requirements

@@ -4,6 +4,21 @@ The current version is in `ui.Version`.
 
 **Numbering:** each new feature or fix gets the next `1.0.x` number. If it takes more than one try to get right, the follow ups get a letter: `1.0.1`, `1.0.1b`, `1.0.1c` and so on. The next feature moves on to `1.0.2`.
 
+## 1.0.6 - 2026-10-03
+
+Islands: titled panels that split the page into columns. Everything is documented in [Islands](README.md#islands). Menus that don't use them look exactly the same as before.
+
+**New**
+
+- `tab:AddIsland({ Title, Description, Column, MinHeight, Style })` adds a panel. It has the same `Add...` functions as a tab, drawn as slim rows with no card or icon, plus `island:AddDivider("text")` for a labelled line between groups of rows.
+- Islands fill the tab's columns, two by default, so two islands sit side by side down the middle. `Columns` on `ui:AddTab` (1 to 4) or `tab:SetColumns(n)` changes it. Each island goes in the shortest column unless it has a `Column`, and islands that don't fit move to the next page.
+- Rows can sit side by side inside an island with `Width`, e.g. two half width buttons.
+- New style keys: `RowHeight`, `RowGap`, `RowTextSize`, `IslandPadding`, `IslandCorner`, `IslandBorder`, `IslandOpacity`, `HeaderSize`, `HeaderUpper`, `HeaderRule`. They work in `ui:SetLayout`, tab, island and row styles, and Compact sets slimmer rows.
+- New `Checkbox` style key draws toggles as a square checkbox, on islands and normal cards.
+- New `Suffix` option on sliders, e.g. `Suffix = " hz"` shows `30 hz`.
+- Island rows save under `Tab/Island/Title`.
+- `island:SetText`, `island:SetDescription`, `island:SetStyle`.
+
 ## 1.0.5b - 2026-10-02
 
 - New `Save = false` option on controls to leave them out of the saved settings, for toggles that start automation so loading a script never starts them by itself.
