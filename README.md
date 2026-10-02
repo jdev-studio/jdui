@@ -416,6 +416,7 @@ From then on, every toggle, slider, dropdown and keybind box is saved to `myscri
 - **When it loads:** straight away for controls that already exist, and for controls you add later, as soon as they're made. So you can call `SetConfig` before or after adding your controls.
 - **Callbacks run on load.** A saved toggle that was on calls its callback with `true` when it's restored, so your feature starts the same way as if the player had clicked it. If you don't want that for a feature, check a flag in the callback.
 - **Buttons and labels** aren't saved, since they have no value.
+- **Leaving a control out:** add `Save = false`, for example `tab:AddToggle({ Title = "Auto farm", Save = false })`. Good for anything that starts automation, so it's never switched on just by loading the script.
 - **Saved values that no longer fit** are skipped: a dropdown option that was removed, or a keybind on a control that's gone. Slider values are snapped to the slider's current `Min`, `Max` and `Step`.
 
 **How controls are named in the file.** Each control is saved under `Tab/Title`, for example `Main/Auto farm`. If you rename a control or its tab, its old value isn't found any more. To keep a value across renames, or when two controls in a tab share a title, give the control a fixed `Flag`:
@@ -430,6 +431,7 @@ main:AddToggle({ Title = "Auto farm", Flag = "autoFarm", Callback = function(on)
 | `ui:SaveConfig()` | Writes the file right now |
 | `ui.ConfigFile` | The file in use, `nil` until `SetConfig` is called |
 | `Flag` option | Fixed name for a control in the file, instead of `Tab/Title` |
+| `Save = false` option | Leaves that control out of the file. Use it for toggles that start something, like an auto farm, so loading the script never starts it by itself |
 
 Saving needs `writefile` and `readfile`. Without them the menu works normally and just doesn't save.
 

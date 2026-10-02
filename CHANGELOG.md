@@ -4,6 +4,10 @@ The current version is in `ui.Version`.
 
 **Numbering:** each new feature or fix gets the next `1.0.x` number. If it takes more than one try to get right, the follow ups get a letter: `1.0.1`, `1.0.1b`, `1.0.1c` and so on. The next feature moves on to `1.0.2`.
 
+## 1.0.5b - 2026-10-02
+
+- New `Save = false` option on controls to leave them out of the saved settings, for toggles that start automation so loading a script never starts them by itself.
+
 ## 1.0.5 - 2026-10-02
 
 - Settings save themselves. `ui:SetConfig("myscript")` saves every toggle, slider, dropdown and keybind box, plus the theme and menu key, to `myscript.json`, and loads them back next time. It saves half a second after a change and when the menu closes. Callbacks run when values are restored.

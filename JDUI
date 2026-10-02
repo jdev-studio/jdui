@@ -42,7 +42,7 @@ local function copyStyle(t,where)
  end
  return out
 end
-local app={Version="1.0.5",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
+local app={Version="1.0.5b",CaptureInput=true,StartupSound=true,Effects=true,ReducedMotion=false,EffectStrength=0.8,Alive=true,Tabs={},Theme="Purple",Keybind=0xA1,Visible=true,Layout=copyStyle(layoutDefaults,"Layout")}
 env.JDUI=app;pcall(rawset,_G,"JDUI",app)
 local run=game:GetService("RunService")
 local workspace=game:GetService("Workspace")
@@ -326,7 +326,7 @@ function Tab:_add(kind,o)
  if kind=="toggle" then c.Value=not not o.Default elseif kind=="slider" then c:SetValue(o.Default or c.Min,true)
  elseif kind=="dropdown" then c:SetValue(o.Default or c.Options[1],true) end
  animations[c.Id.."appear"]=0
- c.ConfigKey=o.Flag or (self.Title.."/"..tostring(o.Title or kind))
+ if o.Save~=false then c.ConfigKey=o.Flag or (self.Title.."/"..tostring(o.Title or kind)) end
  applySaved(c)
  self.Controls[#self.Controls+1]=c;return c
 end
